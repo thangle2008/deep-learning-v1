@@ -13,7 +13,9 @@ def load_data(filepath):
     train_data, val_data, test_data = cPickle.load(f)
     
     def cast_to_32(data):
-        return (data[0].astype(np.float32), data[1].astype(np.int32))
+	data_x = np.asarray(data[0], dtype=np.float32)
+	data_y = np.asarray(data[1], dtype=np.int32)
+	return (data_x, data_y)
 
     f.close()
     
@@ -70,6 +72,7 @@ class Network:
         
         # training
         train_costs, val_costs = [], []
+        best_val_acc = 0.0
 
         for epoch in xrange(epochs):
             for batch in xrange(num_train_batches):
@@ -84,10 +87,15 @@ class Network:
                     val_cost, val_acc = self.cost_and_accuracy(val_data, mini_batch_size=val_batch_size)
                     print("Current test accuracy is {0}%".format(val_acc * 100))
                     
+                    if best_val_acc < val_acc:
+                        best_val_acc = val_acc
+                    
                     if train_cost_cached: 
                         train_costs.append(train_cost)
                     if val_cost_cached:
                         val_costs.append(val_cost)
+        
+        print("Best validation accuracy is {0}%".format(best_val_acc * 100))
         
         return train_costs, val_costs
          

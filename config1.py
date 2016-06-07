@@ -6,13 +6,16 @@ import matplotlib.pyplot as plt
 
 from train_conv import load_data, Network
 
-EPOCHS = 10
+EPOCHS = 100
 DIM = 28
 CLASSES = 10
 
-train_data, val_data, test_data = load_data('./data/mnist.pkl.gz')
-train_data = (train_data[0].reshape(50000, 1, DIM, DIM), train_data[1])
-val_data = (val_data[0].reshape(10000, 1, DIM, DIM), val_data[1])
+train_data, val_data, test_data = load_data('./data/bird_image_full_expanded.pkl.gz')
+num_train_examples = train_data[0].shape[0]
+num_val_examples = val_data[0].shape[0]
+
+train_data = (train_data[0].reshape(num_train_examples, 1, DIM, DIM), train_data[1])
+val_data = (val_data[0].reshape(num_val_examples, 1, DIM, DIM), val_data[1])
 
 data_size = (None, 1, DIM, DIM)
 output_size = CLASSES
