@@ -26,4 +26,5 @@ dropout = DropoutLayer(fc1, p=0.5)
 out = DenseLayer(dropout, output_size, nonlinearity=lasagne.nonlinearities.softmax)
 
 net = Network(input_var, out)
-net.train(train_data, val_data=val_data, lr=0.03, train_batch_size=10, epochs = 10) 
+net.train(train_data, val_data=val_data, lr=0.03, train_batch_size=10, val_batch_size=100, 
+        epochs = 3)
