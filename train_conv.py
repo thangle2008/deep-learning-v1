@@ -22,20 +22,20 @@ def load_data(filepath):
     return (cast_to_32(train_data), cast_to_32(val_data), cast_to_32(test_data))
  
 class Network:
-    def __init__(self, input_var, out_layer):
-        self.input_var = input_var
-        self.out_layer = out_layer
+    def __init__(self, l_in, l_out):
+        self.l_in = l_in
+        self.l_out = l_out
 
         # defining testing function
         target_var = T.ivector()
-        test_prediction = lasagne.layers.get_output(self.out_layer, deterministic=True)
+        test_prediction = lasagne.layers.get_output(self.l_out, deterministic=True)
         test_cost = lasagne.objectives.categorical_crossentropy(test_prediction, target_var)
 
         test_cost = test_cost.mean()
         test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var), dtype=theano.config.floatX)
 
-        self.__test_fn = theano.function([self.input_var, target_var], [test_cost, test_acc])
-        self.__get_preds = theano.function([self.input_var], test_prediction)
+        self.__test_fn = theano.function([self.l_in.input_var, target_var], [test_cost, test_acc])
+        self.__get_preds = theano.function([self.l_in.input_var], test_prediction)
     
     def train(self, train_data, val_data=None, lr=0.1, lmbda=0.0,
               train_batch_size=None, val_batch_size=None, epochs=1,
@@ -56,19 +56,20 @@ class Network:
         
         # cost function
         target_var = T.ivector('targets')
-        prediction = lasagne.layers.get_output(self.out_layer)
+        prediction = lasagne.layers.get_output(self.l_out)
         cost_fn = lasagne.objectives.categorical_crossentropy(prediction, target_var).mean()
         
         # regularization
-        penalty = regularize_network_params(self.out_layer, l2)
+        penalty = regularize_network_params(self.l_out, l2)
         cost_fn += lmbda * penalty
 
         # update rule
-        params = lasagne.layers.get_all_params(self.out_layer, trainable=True)
-        updates = lasagne.updates.sgd(cost_fn, params, learning_rate=lr)
+        params = lasagne.layers.get_all_params(self.l_out, trainable=True)
+
+        updates = lasagne.updates.adagrad(cost_fn, params, learning_rate=lr)
         
         # defining training and testing function
-        train_fn = theano.function([self.input_var, target_var], cost_fn, updates=updates) 
+        train_fn = theano.function([self.l_in.input_var, target_var], cost_fn, updates=updates) 
         
         # training
         train_costs, val_costs = [], []
