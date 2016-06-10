@@ -62,7 +62,7 @@ class Network:
 
         random.seed(CROP_SEED)
     
-    def train(self, train_data, val_data=None, lr=0.1, lmbda=0.0,
+    def train(self, train_data, val_data=None, test_data=None, lr=0.1, lmbda=0.0,
               train_batch_size=None, val_batch_size=None, epochs=1,
               train_cost_cached=False, val_cost_cached=False,
               crop_dim=None):
@@ -118,19 +118,26 @@ class Network:
 #                    print("Training mini-batch number {0}".format(iteration))
 
                 if (iteration+1) % num_train_batches == 0:
-                    val_cost, val_acc = self.cost_and_accuracy(val_data, mini_batch_size=val_batch_size,
-                                                               crop_dim=crop_dim)
+                    if val_data:
+                        val_cost, val_acc = self.cost_and_accuracy(val_data, 
+                                    mini_batch_size=val_batch_size, crop_dim=crop_dim)
+                        print("Epoch {0} validation accuracy is {1}%".format(epoch, val_acc * 100))
+                        if best_val_acc < val_acc:
+                            best_val_acc = val_acc
+                            print("This is the best validation accuracy")
+                            if test_data:
+                                _, test_acc = self.cost_and_accuracy(test_data,
+                                    mini_batch_size=val_batch_size, crop_dim=crop_dim)
+                                print("The corresponding test accuracy: {0}%".format(test_acc * 100))
+                                
+                        if val_cost_cached:
+                            val_costs.append(val_cost)
+
                     average_train_cost = np.mean(current_epoch_costs)
-                    print("Epoch {0} validation accuracy is {1}%".format(epoch, val_acc * 100))
                     print("Average training cost is {0}".format(average_train_cost))
-                    
-                    if best_val_acc < val_acc:
-                        best_val_acc = val_acc
-                    
+                     
                     if train_cost_cached: 
                         train_costs.append(average_train_cost)
-                    if val_cost_cached:
-                        val_costs.append(val_cost)
         
         print("Best validation accuracy is {0}%".format(best_val_acc * 100))
         
