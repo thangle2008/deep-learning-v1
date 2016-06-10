@@ -92,7 +92,7 @@ class Network:
         # update rule
         params = lasagne.layers.get_all_params(self.l_out, trainable=True)
 
-        updates = lasagne.updates.adagrad(cost_fn, params, learning_rate=lr)
+        updates = lasagne.updates.momentum(cost_fn, params, learning_rate=lr, momentum=0.9)
         
         # defining training and testing function
         train_fn = theano.function([self.l_in.input_var, target_var], cost_fn, updates=updates) 
