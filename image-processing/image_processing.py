@@ -11,9 +11,11 @@ import gzip
 from scipy.misc import imread, imresize, imrotate
 from scipy.ndimage.interpolation import zoom, shift
 
-SEED = 42
+SEED1 = 42
+SEED2 = 43
 
 def load_image(folder, dim=28, expand_train=False, mode="L"):
+    print "Loading data"
     images = []
     categories = []
     c = 0
@@ -37,7 +39,6 @@ def load_image(folder, dim=28, expand_train=False, mode="L"):
         c += 1
     
     images = np.asarray(images, dtype = np.float32)
-    print images.shape
     categories = np.array(categories)
     
     # normalizing
@@ -45,7 +46,7 @@ def load_image(folder, dim=28, expand_train=False, mode="L"):
 
     # stratified shuffle and split the data set
     sss = StratifiedShuffleSplit(categories, 1, test_size=0.4,
-                        random_state=SEED)
+                        random_state=SEED1)
 
     train_x, train_y, test_val_x, test_val_y = None, None, None, None
 
@@ -53,10 +54,16 @@ def load_image(folder, dim=28, expand_train=False, mode="L"):
         train_x, test_val_x = images[train_index], images[test_index]
         train_y, test_val_y = categories[train_index], categories[test_index]
 
-    num_test_val = test_val_x.shape[0]
-    val_x, val_y = test_val_x[:num_test_val/2], test_val_y[:num_test_val/2]
-    test_x, test_y = test_val_x[num_test_val/2:], test_val_y[num_test_val/2:]
+    # continue to split between val and test sets
+    sss = StratifiedShuffleSplit(test_val_y, 1, test_size = 0.5, 
+                        random_state=SEED2)
+    
+    val_x, val_y, test_x, test_y = None, None, None, None
+    for val_index, test_index in sss:
+        val_x, test_x = test_val_x[val_index], test_val_x[test_index]
+        val_y, test_y = test_val_y[val_index], test_val_y[test_index]
 
+    # expand the training data if desired
     if expand_train:
         train_x, train_y = expand_data_set(list(train_x), list(train_y))
 
@@ -67,6 +74,7 @@ def load_image(folder, dim=28, expand_train=False, mode="L"):
     return train_data, val_data, test_data
 
 def save_image(data, filename="data_set.pkl.gz"):
+    print "Saving data"
     f = gzip.open(filename, "w")
     cPickle.dump(data, f)
     f.close() 
