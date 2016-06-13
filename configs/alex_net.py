@@ -28,6 +28,7 @@ def build_model(data_size, num_classes):
       filter_size=7,
       nonlinearity=lasagne.nonlinearities.rectify,
       W=lasagne.init.GlorotUniform(gain='relu'),
+      b=lasagne.init.Constant(1.0),
       ) 
     net['norm2'] = lasagne.layers.LocalResponseNormalization2DLayer(net['conv2'])
     net['pool2'] = lasagne.layers.MaxPool2DLayer(net['norm2'], 
@@ -48,6 +49,7 @@ def build_model(data_size, num_classes):
       filter_size=3,
       nonlinearity=lasagne.nonlinearities.rectify,
       W=lasagne.init.GlorotUniform(gain='relu'),
+      b=lasagne.init.Constant(1.0),
       ) #out 27x27x128
 
     net['conv4'] = lasagne.layers.Conv2DLayer(
@@ -56,6 +58,7 @@ def build_model(data_size, num_classes):
       filter_size=3,
       nonlinearity=lasagne.nonlinearities.rectify,
       W=lasagne.init.GlorotUniform(gain='relu'),
+      b=lasagne.init.Constant(1.0),
       )
     net['pool4'] = lasagne.layers.MaxPool2DLayer(net['conv4'], 
       pool_size=(2, 2),
@@ -67,6 +70,7 @@ def build_model(data_size, num_classes):
       net['pool4'],
       num_units=512,
       W=lasagne.init.GlorotUniform(gain="relu"),
+      b=lasagne.init.Constant(1.0),
       )
 
     net['dropout1'] = lasagne.layers.DropoutLayer(net['fc1'], p=0.5)
@@ -76,6 +80,7 @@ def build_model(data_size, num_classes):
       net['dropout1'],
       num_units=512,
       W=lasagne.init.GlorotUniform(gain="relu"),
+      b=lasagne.init.Constant(1.0),
       )
     net['dropout2'] = lasagne.layers.DropoutLayer(net['fc2'], p=0.5)
 

@@ -26,7 +26,7 @@ test_data = (test_data[0].reshape(num_test_examples, CHANNELS, DIM, DIM), test_d
 #val_data =(np.concatenate((val_data[0], test_data[0]), axis = 0), np.concatenate((val_data[1], test_data[1])))
 
 # build the model
-model = alex_net.build_model(data_size, CLASSES)
+model = alex_net.build_model_revised(data_size, CLASSES)
 net = Network(model['input'], model['output'])
 
 train_costs, val_costs = net.train(train_data, val_data=val_data, test_data=test_data,
