@@ -11,12 +11,13 @@ import cPickle
 import random
 
 CROP_SEED = 28
+SHUFFLE_SEED = 29
 
 def load_data(filepath):
     print "loading data"
     f = gzip.open(filepath, 'r')
     train_data, val_data, test_data = cPickle.load(f)
-    
+   
     def cast_to_32(data):
 	data_x = np.asarray(data[0], dtype=np.float32)
 	data_y = np.asarray(data[1], dtype=np.int32)
@@ -92,7 +93,9 @@ class Network:
         # update rule
         params = lasagne.layers.get_all_params(self.l_out, trainable=True)
 
-        updates = lasagne.updates.momentum(cost_fn, params, learning_rate=lr, momentum=0.9)
+        updates = lasagne.updates.momentum(cost_fn, params, learning_rate=lr*0.1, momentum = 0.9)
+#        updates = lasagne.updates.adagrad(cost_fn, params, learning_rate=lr)
+#        updates = lasagne.updates.adadelta(cost_fn, params, learning_rate=lr)
         
         # defining training and testing function
         train_fn = theano.function([self.l_in.input_var, target_var], cost_fn, updates=updates) 
@@ -103,7 +106,7 @@ class Network:
 
         for epoch in xrange(epochs):
             current_epoch_costs = []
-#            train_x, train_y = sklearn.utils.shuffle(train_x, train_y)
+            train_x, train_y = sklearn.utils.shuffle(train_x, train_y, random_state=SHUFFLE_SEED)
             for batch in xrange(num_train_batches):
                 iteration = num_train_batches * epoch + batch
                 batch_x = train_x[batch*train_batch_size:(batch+1)*train_batch_size]
