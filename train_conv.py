@@ -90,7 +90,11 @@ class Network:
         # cost function
         target_var = T.ivector('targets')
         prediction = lasagne.layers.get_output(self.l_out)
+        deterministic_prediction = lasagne.layers.get_output(self.l_out, deterministic=True)
+
         cost_fn = lasagne.objectives.categorical_crossentropy(prediction, target_var).mean()
+        deterministic_cost_fn = lasagne.objectives.categorical_crossentropy(deterministic_prediction, 
+                                        target_var).mean()
         
         # regularization
         penalty = regularize_network_params(self.l_out, l2)
@@ -104,14 +108,14 @@ class Network:
 #        updates = lasagne.updates.adadelta(cost_fn, params, learning_rate=lr)
         
         # defining training and testing function
-        train_fn = theano.function([self.l_in.input_var, target_var], cost_fn, updates=updates) 
+        train_fn = theano.function([self.l_in.input_var, target_var], [cost_fn, deterministic_cost_fn], 
+                                     updates=updates) 
         
         # training
         train_costs, val_costs = [], []
         best_val_acc = 0.0
 
         for epoch in xrange(epochs):
-            current_epoch_costs = []
             train_x, train_y = sklearn.utils.shuffle(train_x, train_y, random_state=SHUFFLE_SEED)
             for batch in xrange(num_train_batches):
                 iteration = num_train_batches * epoch + batch
@@ -121,8 +125,7 @@ class Network:
                 if crop_dim:
                     dim = batch_x.shape[2]
                     batch_x = random_crop(batch_x, dim, crop_dim)
-                train_cost = train_fn(batch_x, batch_y)
-                current_epoch_costs.append(train_cost)
+                _, train_cost = train_fn(batch_x, batch_y)
 #                if iteration % 1000 == 0:
 #                    print("Training mini-batch number {0}".format(iteration))
 
@@ -138,15 +141,13 @@ class Network:
                                 _, test_acc = self.cost_and_accuracy(test_data,
                                     mini_batch_size=val_batch_size, crop_dim=crop_dim)
                                 print("The corresponding test accuracy: {0}%".format(test_acc * 100))
-                                
+                        
+                        print("Current training cost is: {0}".format(train_cost))
+
                         if val_cost_cached:
                             val_costs.append(val_cost)
-
-                    average_train_cost = np.mean(current_epoch_costs)
-                    print("Average training cost is {0}".format(average_train_cost))
-                     
-                    if train_cost_cached: 
-                        train_costs.append(average_train_cost)
+                        if train_cost_cached:
+                            train_costs.append(train_cost)
         
         print("Best validation accuracy is {0}%".format(best_val_acc * 100))
         
