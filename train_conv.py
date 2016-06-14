@@ -38,13 +38,19 @@ def random_crop(data, dim, new_dim):
 
         new_img = img[:, idx:idx+new_dim, idy:idy+new_dim]
 
+        if num_channels == 3:
+            new_img = new_img.swapaxes(1, 2).swapaxes(0, 2)
+
         if random.randint(0, 1) == 0:
             new_img = np.fliplr(new_img)
-        
-        new_img = np.reshape(new_img, (num_channels, new_dim, new_dim))
+
+        if num_channels == 3:
+            new_img = new_img.swapaxes(0, 2).swapaxes(1, 2)
+
         new_data.append(new_img)
+
     return np.asarray(new_data)
-        
+ 
 class Network:
     def __init__(self, l_in, l_out):
         self.l_in = l_in
