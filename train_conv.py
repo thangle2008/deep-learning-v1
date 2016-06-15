@@ -69,7 +69,7 @@ class Network:
 
         random.seed(CROP_SEED)
     
-    def train(self, train_data, val_data=None, test_data=None, lr=0.1, lmbda=0.0,
+    def train(self, algorithm, train_data, val_data=None, test_data=None, lr=0.1, lmbda=0.0,
               train_batch_size=None, val_batch_size=None, epochs=1,
               train_cost_cached=False, val_cost_cached=False,
               crop_dim=None):
@@ -102,10 +102,14 @@ class Network:
 
         # update rule
         params = lasagne.layers.get_all_params(self.l_out, trainable=True)
-
-        updates = lasagne.updates.momentum(cost_fn, params, learning_rate=lr*0.1, momentum = 0.9)
-#        updates = lasagne.updates.adagrad(cost_fn, params, learning_rate=lr)
-#        updates = lasagne.updates.adadelta(cost_fn, params, learning_rate=lr)
+        
+        updates = None
+        if algorithm == 'adagrad':
+            updates = lasagne.updates.adagrad(cost_fn, params, learning_rate=lr)
+        elif algorithm == 'momentum':
+            updates = lasagne.updates.momentum(cost_fn, params, learning_rate=lr, momentum = 0.9)
+        elif algorithm == 'adadelta':
+            updates = lasagne.updates.adadelta(cost_fn, params, learning_rate=lr)
         
         # defining training and testing function
         train_fn = theano.function([self.l_in.input_var, target_var], [cost_fn, deterministic_cost_fn], 
@@ -114,6 +118,7 @@ class Network:
         # training
         train_costs, val_costs = [], []
         best_val_acc = 0.0
+        print("Training network with {0} in {1} epochs".format(algorithm, epochs))
 
         for epoch in xrange(epochs):
             train_x, train_y = sklearn.utils.shuffle(train_x, train_y, random_state=SHUFFLE_SEED)
@@ -126,8 +131,6 @@ class Network:
                     dim = batch_x.shape[2]
                     batch_x = random_crop(batch_x, dim, crop_dim)
                 _, train_cost = train_fn(batch_x, batch_y)
-#                if iteration % 1000 == 0:
-#                    print("Training mini-batch number {0}".format(iteration))
 
                 if (iteration+1) % num_train_batches == 0:
                     if val_data:
