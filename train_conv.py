@@ -121,6 +121,8 @@ class Network:
         train_costs, val_costs = [], []
         best_val_acc = 0.0
         best_val_cost = float('inf')
+        best_params = None
+
         print("Training network with algorithm={0}, lr={1} in {2} epochs".format(algorithm, lr, epochs))
 
         for epoch in xrange(epochs):
@@ -144,6 +146,7 @@ class Network:
                         print("Epoch {0} validation accuracy is {1}%".format(epoch, val_acc * 100))
                         if best_val_acc < val_acc:
                             best_val_acc = val_acc
+                            best_params = lasagne.layers.get_all_param_values(self.l_out) 
                             print("This is the best validation accuracy")
                             if test_data:
                                 _, test_acc = self.cost_and_accuracy(test_data,
@@ -162,6 +165,9 @@ class Network:
         
         print("Best validation accuracy is {0}%".format(best_val_acc * 100))
         
+        # save the best params
+        np.save("best_params", best_params)
+ 
         return best_val_cost, train_costs, val_costs
          
     def cost_and_accuracy(self, test_data, mini_batch_size=None, crop_dim=None):
