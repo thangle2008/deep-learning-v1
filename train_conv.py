@@ -110,6 +110,8 @@ class Network:
             updates = lasagne.updates.momentum(cost_fn, params, learning_rate=lr, momentum = 0.9)
         elif algorithm == 'adadelta':
             updates = lasagne.updates.adadelta(cost_fn, params, learning_rate=lr)
+        elif algorithm == 'adam':
+            updates = lasagne.updates.adam(cost_fn, params, learning_rate=lr)
         
         # defining training and testing function
         train_fn = theano.function([self.l_in.input_var, target_var], [cost_fn, deterministic_cost_fn], 
@@ -118,9 +120,11 @@ class Network:
         # training
         train_costs, val_costs = [], []
         best_val_acc = 0.0
-        print("Training network with {0} in {1} epochs".format(algorithm, epochs))
+        best_val_cost = float('inf')
+        print("Training network with algorithm={0}, lr={1} in {2} epochs".format(algorithm, lr, epochs))
 
         for epoch in xrange(epochs):
+            epoch_costs = []
             train_x, train_y = sklearn.utils.shuffle(train_x, train_y, random_state=SHUFFLE_SEED)
             for batch in xrange(num_train_batches):
                 iteration = num_train_batches * epoch + batch
@@ -131,6 +135,7 @@ class Network:
                     dim = batch_x.shape[2]
                     batch_x = random_crop(batch_x, dim, crop_dim)
                 _, train_cost = train_fn(batch_x, batch_y)
+                epoch_costs.append(train_cost)
 
                 if (iteration+1) % num_train_batches == 0:
                     if val_data:
@@ -144,17 +149,20 @@ class Network:
                                 _, test_acc = self.cost_and_accuracy(test_data,
                                     mini_batch_size=val_batch_size, crop_dim=crop_dim)
                                 print("The corresponding test accuracy: {0}%".format(test_acc * 100))
-                        
-                        print("Current training cost is: {0}".format(train_cost))
+
+                        best_val_cost = min(best_val_cost, val_cost)
+                        average_train_cost = np.mean(epoch_costs)
+
+                        print("Current training cost is: {0}".format(average_train_cost))
 
                         if val_cost_cached:
                             val_costs.append(val_cost)
                         if train_cost_cached:
-                            train_costs.append(train_cost)
+                            train_costs.append(average_train_cost)
         
         print("Best validation accuracy is {0}%".format(best_val_acc * 100))
         
-        return train_costs, val_costs
+        return best_val_cost, train_costs, val_costs
          
     def cost_and_accuracy(self, test_data, mini_batch_size=None, crop_dim=None):
         test_x, test_y = test_data

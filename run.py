@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import argparse
+import cPickle
+import gzip
 
 CLASSES = 9
 DIM = 140
@@ -14,7 +16,7 @@ TRAIN_BATCH_SIZE = 32
 IMG_DIR = '../image-data/compressed/bird_full_no_cropped_no_empty_140_rgb.pkl.gz'
 EPOCHS = 300
 
-def main(args):
+def main(args, optimize=False):
     algorithm = 'adagrad'
     num_epoch = EPOCHS
     model = 'alexnet'
@@ -34,13 +36,6 @@ def main(args):
     data_size = (None, CHANNELS, CROP_DIM, CROP_DIM)
 
     train_data, val_data, test_data = load_data(IMG_DIR)
-    num_train_examples = train_data[0].shape[0]
-    num_val_examples = val_data[0].shape[0]
-    num_test_examples = test_data[0].shape[0]
-
-    train_data = (train_data[0].reshape(num_train_examples, CHANNELS, DIM, DIM), train_data[1])
-    val_data = (val_data[0].reshape(num_val_examples, CHANNELS, DIM, DIM), val_data[1])
-    test_data = (test_data[0].reshape(num_test_examples, CHANNELS, DIM, DIM), test_data[1])
 
     # build the model
     if model == 'alexnet':
@@ -50,7 +45,7 @@ def main(args):
 
     net = Network(model['input'], model['output'])
 
-    train_costs, val_costs = net.train(algorithm, train_data, val_data=val_data, test_data=test_data,
+    best_val_cost, train_costs, val_costs = net.train(algorithm, train_data, val_data=val_data, test_data=test_data,
                                         lr=lr, lmbda=lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
                                         val_batch_size=10, epochs = num_epoch, train_cost_cached=True,
                                         val_cost_cached=True, crop_dim=CROP_DIM)
