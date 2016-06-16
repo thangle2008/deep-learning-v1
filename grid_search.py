@@ -2,7 +2,9 @@ from train_conv import load_data, Network
 from configs import alex_net, dinc_sx3_ffc_b32
 
 import hyperopt
-from hyperopt import fmin, tpe, hp, STATUS_OK
+from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+
+import cPickle
 
 CLASSES = 9
 DIM = 140
@@ -19,7 +21,8 @@ EPOCHS = 50
 def build_network():
     data_size = (None, CHANNELS, CROP_DIM, CROP_DIM)
 
-    model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
+#    model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
+    model = alex_net.build_model_revised(data_size, CLASSES)
 
     return Network(model['input'], model['output'])
     
@@ -39,11 +42,16 @@ def main():
         return {'loss': best_val_cost, 'status': STATUS_OK}
 
     space = hp.uniform('lr', 0, 0.001)
+    trials = Trials()
 
-    best = fmin(objective, space, algo=tpe.suggest, max_evals=100)
+    best = fmin(objective, space, algo=tpe.suggest, max_evals=100, trials=trials)
 
     print best
     print hyperopt.space_eval(space, best)
+    
+    f = open('out.txt', 'w')
+    cPickle.dump(trials.trials, f)
+    f.close()
 
 if __name__ == '__main__':
     main()
