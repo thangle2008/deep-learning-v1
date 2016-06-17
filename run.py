@@ -37,6 +37,10 @@ def main(args, optimize=False):
 
     train_data, val_data, test_data = load_data(IMG_DIR)
 
+    # use both val and test as val
+    val_data = (np.concatenate((val_data[0], test_data[0]), axis = 0),
+                np.concatenate((val_data[1], test_data[1])))
+
     # build the model
     if model == 'alexnet':
         model = alex_net.build_model_revised(data_size, CLASSES)

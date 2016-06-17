@@ -190,3 +190,38 @@ class Network:
             test_accs.append(self.__test_fn(batch_x, batch_y))
     
         return np.mean(test_accs, axis=0)
+
+    def get_wrong_classification(self, test_data, mini_batch_size=None, crop_dim=None):
+        test_x, test_y = test_data
+
+        if not mini_batch_size:
+            mini_batch_size = test_x.shape[0]
+        num_test_batches = test_x.shape[0] / mini_batch_size
+        
+        res = None
+        incorrect_labels = None
+        correct_labels = None
+
+        for i in xrange(num_test_batches):
+            batch_x = test_x[i*mini_batch_size:(i+1)*mini_batch_size]
+            batch_y = test_y[i*mini_batch_size:(i+1)*mini_batch_size]
+            
+            non_cropped = batch_x
+ 
+            if crop_dim:
+                dim = batch_x.shape[2]
+                batch_x = random_crop(batch_x, dim, crop_dim)
+            
+            predictions = np.argmax(self.__get_preds(batch_x), axis=1)
+            diff_idx = np.where(predictions != batch_y)[0]
+ 
+            if res is not None:
+                res = np.concatenate((res, non_cropped[diff_idx]))
+                incorrect_labels = np.concatenate((incorrect_labels, predictions[diff_idx]))
+                correct_labels = np.concatenate((correct_labels, batch_y[diff_idx]))
+            else:
+                res = non_cropped[diff_idx]
+                incorrect_labels = predictions[diff_idx]
+                correct_labels = batch_y[diff_idx]
+
+        return (res, incorrect_labels, correct_labels)
