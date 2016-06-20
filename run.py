@@ -11,7 +11,6 @@ import gzip
 CLASSES = 9
 DIM = 140
 CROP_DIM = 128
-CHANNELS = 3
 TRAIN_BATCH_SIZE = 32
 IMG_DIR = '../image-data/compressed/bird_full_no_cropped_no_empty_140_rgb.pkl.gz'
 EPOCHS = 300
@@ -32,10 +31,13 @@ def main(args, optimize=False):
         lr = args.learning_rate
     if args.lmbda:
         lmbda = args.lmbda
-
-    data_size = (None, CHANNELS, CROP_DIM, CROP_DIM)
+    if args.data:
+        IMG_DIR = args.data
 
     train_data, val_data, test_data = load_data(IMG_DIR)
+    num_channels = train_data[0][0].shape[0]
+    
+    data_size = (None, num_channels, CROP_DIM, CROP_DIM)
 
     # use both val and test as val
     val_data = (np.concatenate((val_data[0], test_data[0]), axis = 0),
@@ -69,6 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', dest='model')
     parser.add_argument('--learning_rate', dest='learning_rate', action="store", type=float)
     parser.add_argument('--lambda', dest='lmbda', action="store", type=float)
+    parser.add_argument('--data', dest='data')
     
     args = parser.parse_args()
 

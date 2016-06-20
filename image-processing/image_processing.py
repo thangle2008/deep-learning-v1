@@ -31,6 +31,7 @@ def load_image(folder, dim=28, expand_train=False, mode="L"):
                 image = imread(filepath, mode=mode)
                 if mode == "L":
                     image = imresize(image, (dim, dim))
+                    image = np.array([image])
                 if mode == "RGB":
                     image = imresize(image, (dim, dim))
                     image = image.swapaxes(0, 2).swapaxes(1, 2)

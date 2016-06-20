@@ -20,5 +20,5 @@ if args.expand:
 if args.dim:
     DIM = args.dim
 
-data = load_image(IMG_DIR, dim=DIM, expand_train=EXPAND, mode="RGB")
-save_image(data, "bird_full_no_cropped_no_empty_{0}_rgb.pkl.gz".format(DIM))
+data = load_image(IMG_DIR, dim=DIM, expand_train=EXPAND, mode="L")
+save_image(data, "bird_full_no_cropped_no_empty_{0}_gray.pkl.gz".format(DIM))
