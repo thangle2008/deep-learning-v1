@@ -1,5 +1,5 @@
 from train_conv import load_data, Network
-from configs import alex_net, dinc_sx3_ffc_b32
+from configs import alexnet, dinc_sx3_ffc_b32
 
 import hyperopt
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
@@ -22,7 +22,7 @@ def build_network():
     data_size = (None, CHANNELS, CROP_DIM, CROP_DIM)
 
 #    model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
-    model = alex_net.build_model_revised(data_size, CLASSES)
+    model = alexnet.build_model_revised(data_size, CLASSES)
 
     return Network(model['input'], model['output'])
     
