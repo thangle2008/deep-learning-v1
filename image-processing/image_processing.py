@@ -3,6 +3,7 @@ import re
 
 import numpy as np
 from sklearn.cross_validation import StratifiedShuffleSplit
+from skimage.color import rgb2gray
 
 import random
 import cPickle
@@ -14,7 +15,7 @@ from scipy.ndimage.interpolation import zoom, shift
 SEED1 = 42
 SEED2 = 43
 
-def load_image(folder, dim=28, expand_train=False, mode="L"):
+def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
     print "Loading data"
     images = []
     categories = []
@@ -29,22 +30,30 @@ def load_image(folder, dim=28, expand_train=False, mode="L"):
             if re.search("\.(jpg|png)$", filename):
                 filepath = os.path.join(root, filename)
                 image = imread(filepath, mode=mode)
+                gray_img = None
                 if mode == "L":
                     image = imresize(image, (dim, dim))
                     image = np.array([image])
                 if mode == "RGB":
                     image = imresize(image, (dim, dim))
+                    # normalizing
+                    image = image / 255.0
+
+                    if add_gray:
+                        gray_img = rgb2gray(image)
+                        gray_img = np.array([gray_img, gray_img, gray_img])
                     image = image.swapaxes(0, 2).swapaxes(1, 2)
+
                 images.append(image)
                 categories.append(c)
+                if add_gray:
+                    images.append(gray_img)
+                    categories.append(c) 
         c += 1
     
     images = np.asarray(images, dtype = np.float32)
     categories = np.array(categories)
     
-    # normalizing
-    images = images / 255.0
-
     # stratified shuffle and split the data set
     sss = StratifiedShuffleSplit(categories, 1, test_size=0.4,
                         random_state=SEED1)
