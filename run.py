@@ -1,5 +1,5 @@
 from train_conv import load_data, Network
-from configs import alex_net, dinc_sx3_ffc_b32
+from configs import alexnet, dinc_sx3_ffc_b32, googlenet
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,9 +45,11 @@ def main(args, optimize=False):
 
     # build the model
     if model == 'alexnet':
-        model = alex_net.build_model_revised(data_size, CLASSES)
+        model = alexnet.build_model_revised(data_size, CLASSES)
     elif model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
+    elif model == 'googlenet':
+        model = googlenet.build_model(data_size, CLASSES)
 
     net = Network(model['input'], model['output'])
 
@@ -60,7 +62,7 @@ def main(args, optimize=False):
 
     plt.plot(it, train_costs, 'r', it, val_costs, 'b')
 
-    plt.savefig('./experiments/alex.png')
+    plt.savefig('./alex.png')
     plt.show()
 
 if __name__ == '__main__':
