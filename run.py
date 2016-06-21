@@ -1,5 +1,5 @@
 from train_conv import load_data, Network
-from configs import alexnet, dinc_sx3_ffc_b32, googlenet
+from configs import alexnet, dinc_sx3_ffc_b32
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -49,6 +49,7 @@ def main(args, optimize=False):
     elif model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
     elif model == 'googlenet':
+        googlenet = import_module('configs.googlenet')
         model = googlenet.build_model(data_size, CLASSES)
 
     net = Network(model['input'], model['output'])
@@ -74,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', dest='learning_rate', action="store", type=float)
     parser.add_argument('--lambda', dest='lmbda', action="store", type=float)
     parser.add_argument('--data', dest='data')
-    
+ 
     args = parser.parse_args()
 
     main(args)
