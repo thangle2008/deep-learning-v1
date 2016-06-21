@@ -37,17 +37,17 @@ def random_crop(data, dim, new_dim):
 
         new_img = img[:, idx:idx+new_dim, idy:idy+new_dim]
 
-        new_img = new_img.swapaxes(1, 2).swapaxes(0, 2)
-
         if random.randint(0, 1) == 0:
-            new_img = np.fliplr(new_img)
-
-        new_img = new_img.swapaxes(0, 2).swapaxes(1, 2)
+            new_img = new_img[:, :, ::-1]
 
         new_data.append(new_img)
 
     return np.asarray(new_data)
 
+def center_crop(data, dim, new_dim):
+    offset = (dim - new_dim) / 2
+    return data[:, :, offset:offset+new_dim, offset:offset+new_dim]
+    
  
 class Network:
     def __init__(self, l_in, l_out):
@@ -183,7 +183,7 @@ class Network:
             
             if crop_dim:
                 dim = batch_x.shape[2]
-                batch_x = random_crop(batch_x, dim, crop_dim)
+                batch_x = center_crop(batch_x, dim, crop_dim)
 
             test_accs.append(self.__test_fn(batch_x, batch_y))
     
@@ -208,7 +208,7 @@ class Network:
  
             if crop_dim:
                 dim = batch_x.shape[2]
-                batch_x = random_crop(batch_x, dim, crop_dim)
+                batch_x = center_crop(batch_x, dim, crop_dim)
             
             predictions = np.argmax(self.__get_preds(batch_x), axis=1)
             diff_idx = np.where(predictions != batch_y)[0]
