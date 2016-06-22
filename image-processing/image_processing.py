@@ -15,6 +15,33 @@ from scipy.ndimage.interpolation import zoom, shift
 SEED1 = 42
 SEED2 = 43
 
+def center_crop(img, dim, axis):
+    offset = (img.shape[axis] - dim) / 2
+    if axis == 0:
+        return img[offset:offset+dim]
+    else:
+        return img[:, offset:offset+dim]
+
+def img_resize(img, dim):
+    dim1 = img.shape[0]
+    dim2 = img.shape[1]
+    
+    if dim1 < dim:
+        img = imresize(img, (dim, dim2))
+    if dim2 < dim:
+        img = imresize(img, (dim1, dim)) 
+
+    if dim1 == dim and dim2 == dim:
+        return img
+    elif dim1 > dim2:
+        scaling_factor = dim2 / dim
+        img = imresize(img, ((dim1 / scaling_factor), dim))
+        return center_crop(img, dim, axis=0)
+    else:
+        scaling_factor = dim1 / dim
+        img = imresize(img, (dim, (dim2 / scaling_factor)))
+        return center_crop(img, dim, axis=1)
+
 def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
     print "Loading data"
     images = []
@@ -27,15 +54,15 @@ def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
             continue
         print root
         for filename in filenames:
-            if re.search("\.(jpg|png)$", filename):
+            if re.search("\.(jpg|png|jpeg)$", filename):
                 filepath = os.path.join(root, filename)
                 image = imread(filepath, mode=mode)
                 gray_img = None
                 if mode == "L":
-                    image = imresize(image, (dim, dim))
+                    image = img_resize(image, dim)
                     image = np.array([image])
                 if mode == "RGB":
-                    image = imresize(image, (dim, dim))
+                    image = img_resize(image, dim)
                     # normalizing
                     image = image / 255.0
 
