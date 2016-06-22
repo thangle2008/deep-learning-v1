@@ -16,7 +16,7 @@ SHUFFLE_SEED = 29
 def load_data(filepath):
     print "loading data"
     f = gzip.open(filepath, 'r')
-    train_data, val_data, test_data = cPickle.load(f)
+    train_data, val_data, test_data, label_dict = cPickle.load(f)
    
     def cast_to_32(data):
 	data_x = np.asarray(data[0], dtype=np.float32)
@@ -25,7 +25,7 @@ def load_data(filepath):
 
     f.close()
     
-    return (cast_to_32(train_data), cast_to_32(val_data), cast_to_32(test_data))
+    return (cast_to_32(train_data), cast_to_32(val_data), cast_to_32(test_data), label_dict)
 
 def random_crop(data, dim, new_dim):
     new_data = []

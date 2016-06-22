@@ -44,7 +44,7 @@ def main():
     space = hp.uniform('lr', 0, 0.001)
     trials = Trials()
 
-    best = fmin(objective, space, algo=tpe.suggest, max_evals=30, trials=trials)
+    best = fmin(objective, space, algo=tpe.suggest, max_evals=50, trials=trials)
 
     print best
     print hyperopt.space_eval(space, best)

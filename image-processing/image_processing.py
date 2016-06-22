@@ -48,13 +48,17 @@ def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
     print "Loading data"
     images = []
     categories = []
+    label_dict = {}
     c = 0
 
     # load the images in grayscale and resize
     for root, dirnames, filenames in os.walk(folder):  
         if root == folder:
             continue
-        print root
+        current_dir = root.split('/')[-1]
+        label_dict[c] = current_dir
+
+        print current_dir
         for filename in filenames:
             if re.search("\.(jpg|png|jpeg)$", filename):
                 filepath = os.path.join(root, filename)
@@ -111,7 +115,7 @@ def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
     val_data = (val_x, val_y)
     test_data = (test_x, test_y)
 
-    return train_data, val_data, test_data
+    return train_data, val_data, test_data, label_dict
 
 def save_image(data, filename="data_set.pkl.gz"):
     print "Saving data"

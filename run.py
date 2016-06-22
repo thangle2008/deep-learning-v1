@@ -34,7 +34,7 @@ def main(args, optimize=False):
     if args.data:
         IMG_DIR = args.data
 
-    train_data, val_data, test_data = load_data(IMG_DIR)
+    train_data, val_data, test_data, label_dict = load_data(IMG_DIR)
     num_channels = train_data[0][0].shape[0]
     
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
