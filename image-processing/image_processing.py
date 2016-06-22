@@ -28,8 +28,10 @@ def img_resize(img, dim):
     
     if dim1 < dim:
         img = imresize(img, (dim, dim2))
+        dim1 = dim
     if dim2 < dim:
         img = imresize(img, (dim1, dim)) 
+        dim2 = dim
 
     if dim1 == dim and dim2 == dim:
         return img
