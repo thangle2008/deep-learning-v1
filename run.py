@@ -1,5 +1,6 @@
-from train_conv import load_data, Network
+from train_conv import Network
 from configs import alexnet, dinc_sx3_ffc_b32
+from tools.image_processing import load_image
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +13,6 @@ CLASSES = 9
 DIM = 140
 CROP_DIM = 128
 TRAIN_BATCH_SIZE = 32
-IMG_DIR = '../image-data/compressed/bird_full_no_cropped_no_empty_140_rgb.pkl.gz'
 EPOCHS = 300
 
 def main(args, optimize=False):
@@ -20,21 +20,24 @@ def main(args, optimize=False):
     num_epoch = EPOCHS
     model = 'alexnet'
     lr, lmbda = 0.009, 0.0001
+    train_size = 0.6
 
     if args.algorithm:
         algorithm = args.algorithm
-    if args.epoch:
-        num_epoch = args.epoch
     if args.model:
         model = args.model 
     if args.learning_rate:
         lr = args.learning_rate
     if args.lmbda:
         lmbda = args.lmbda
-    if args.data:
-        IMG_DIR = args.data
+    if args.epoch:
+        num_epoch = args.epoch
+    if args.train_size:
+        train_size = args.train_size
 
-    train_data, val_data, test_data, label_dict = load_data(IMG_DIR)
+    train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
+                                                    normalize=True, train_size=train_size)  
+                                               
     num_channels = train_data[0][0].shape[0]
     
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
@@ -75,6 +78,8 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', dest='learning_rate', action="store", type=float)
     parser.add_argument('--lambda', dest='lmbda', action="store", type=float)
     parser.add_argument('--data', dest='data')
+    parser.add_argument('--dim', dest='dim', action="store", type=int)
+    parser.add_argument('--train_size', dest='train_size', action="store", type=float)
  
     args = parser.parse_args()
 

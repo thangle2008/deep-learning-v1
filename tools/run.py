@@ -12,6 +12,7 @@ parser.add_argument('--expand', dest='expand')
 parser.add_argument('--dim', dest='dim', action="store", type=int)
 parser.add_argument('--mode', dest='mode')
 parser.add_argument('--add_gray', dest='add_gray', action="store_true")
+parser.add_argument('--compounded', dest='compounded', action="store_true")
 
 args = parser.parse_args()
 
@@ -22,5 +23,6 @@ if args.expand:
 if args.dim:
     DIM = args.dim
 
-data = load_image(IMG_DIR, dim=DIM, expand_train=EXPAND, mode=args.mode, add_gray=args.add_gray)
+data = load_image(IMG_DIR, dim=DIM, expand_train=EXPAND, mode=args.mode, add_gray=args.add_gray, 
+                  compounded=args.compounded)
 save_image(data, "bird_full_no_cropped_no_empty_{0}_{1}.pkl.gz".format(DIM, args.mode))

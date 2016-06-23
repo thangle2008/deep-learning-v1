@@ -44,7 +44,8 @@ def img_resize(img, dim):
         img = imresize(img, (dim, (dim2 / scaling_factor)))
         return center_crop(img, dim, axis=1)
 
-def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
+def load_image(folder, dim=140, expand_train=False, mode="RGB", add_gray=False, 
+                train_size=1.0, normalize=False, zero_center=False):
     print "Loading data"
     images = []
     categories = []
@@ -69,13 +70,10 @@ def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
                     image = np.array([image])
                 if mode == "RGB":
                     image = img_resize(image, dim)
-                    # normalizing
-                    image = image / 255.0
 
                     if add_gray:
                         gray_img = rgb2gray(image)
                         gray_img = np.array([gray_img, gray_img, gray_img])
-                    image = image.swapaxes(0, 2).swapaxes(1, 2)
 
                 images.append(image)
                 categories.append(c)
@@ -85,10 +83,22 @@ def load_image(folder, dim=28, expand_train=False, mode="L", add_gray=False):
         c += 1
     
     images = np.asarray(images, dtype = np.float32)
-    categories = np.array(categories)
+    categories = np.array(categories, dtype = np.int32)
     
+    if normalize:
+        images = images / 255.0
+
+    if zero_center:
+        images -= np.mean(images, axis = 0)
+
+    # swap axes of the images
+    images = images.swapaxes(1, 3).swapaxes(2, 3)
+ 
+    if train_size == 1.0:
+        return (images, categories), None, None, label_dict
+ 
     # stratified shuffle and split the data set
-    sss = StratifiedShuffleSplit(categories, 1, test_size=0.4,
+    sss = StratifiedShuffleSplit(categories, 1, test_size=1-train_size,
                         random_state=SEED1)
 
     train_x, train_y, test_val_x, test_val_y = None, None, None, None
