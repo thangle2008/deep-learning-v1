@@ -4,21 +4,18 @@ from importlib import import_module
 
 import lasagne
 
-from train_conv import load_data, Network
+from train_conv import Network
+from tools.image_processing import load_image
+
 from configs import alexnet, dinc_sx3_ffc_b32
 
 import argparse
 
 def main(args):
-    train_data, val_data, test_data, label_dict = load_data(args.data)
-    val_test_data = (np.concatenate((val_data[0], test_data[0]), axis=0),
-                     np.concatenate((val_data[1], test_data[1])))
+    data, _, _, label_dict = load_image(args.data, dim=args.dim, normalize=True)
 
-    if args.all_data:
-        val_test_data = (np.concatenate((train_data[0], val_test_data[0]), axis = 0),
-                         np.concatenate((train_data[1], val_test_data[1])))
+    print data[0].shape
 
-    print val_test_data[0].shape
     params = np.load(args.clf)
         
     model = None
@@ -33,10 +30,10 @@ def main(args):
     lasagne.layers.set_all_param_values(model['output'], params)
     net = Network(model['input'], model['output'])
    
-    print net.cost_and_accuracy(val_test_data, 10, 128) 
+    print net.cost_and_accuracy(data, 10, 128) 
 
     if args.output_png:
-        imgs, wrong_labels, correct_labels = net.get_wrong_classification(val_test_data, 10, 128)
+        imgs, wrong_labels, correct_labels = net.get_wrong_classification(data, 10, 128)
          
         # output the wrong labels
         text1 = plt.text(10, 10, "Wrong label", color='r', weight='bold')
@@ -55,8 +52,8 @@ if __name__ == "__main__":
     parser.add_argument('--data', dest='data')
     parser.add_argument('--classifier', dest='clf')
     parser.add_argument('-m', '--model', dest='model')
-    parser.add_argument('--all_data', dest='all_data', action='store_true')
     parser.add_argument('--output_png', dest='output_png', action='store_true')
+    parser.add_argument('--dim', dest='dim', action='store', type=int)
 
     args = parser.parse_args()
     main(args)      

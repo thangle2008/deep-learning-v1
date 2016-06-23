@@ -54,6 +54,7 @@ def load_image(folder, dim=140, expand_train=False, mode="RGB", add_gray=False,
 
     # load the images in grayscale and resize
     for root, dirnames, filenames in os.walk(folder):  
+        dirnames.sort()
         if root == folder:
             continue
         current_dir = root.split('/')[-1]
