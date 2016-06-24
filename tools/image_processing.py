@@ -12,9 +12,12 @@ import gzip
 from scipy.misc import imread, imresize, imrotate
 from scipy.ndimage.interpolation import zoom, shift
 
+import multiprocessing
+
 SEED1 = 42
 SEED2 = 43
 
+#### Processing functions
 def center_crop(img, dim, axis):
     offset = (img.shape[axis] - dim) / 2
     if axis == 0:
@@ -44,7 +47,12 @@ def img_resize(img, dim):
         img = imresize(img, (dim, (dim2 / scaling_factor)))
         return center_crop(img, dim, axis=1)
 
-def load_image(folder, dim=140, expand_train=False, mode="RGB", add_gray=False, 
+def process_image(imgfile, label, dim, mode):
+    img = imread(imgfile, mode=mode)
+    return img_resize(img, dim), label
+
+#### Main load and save functions
+def load_image(folder, dim=140, expand_train=False, mode="RGB", 
                 train_size=1.0, normalize=False, zero_center=False):
     print "Loading data"
     images = []
@@ -52,7 +60,6 @@ def load_image(folder, dim=140, expand_train=False, mode="RGB", add_gray=False,
     label_dict = {}
     c = 0
 
-    # load the images in grayscale and resize
     for root, dirnames, filenames in os.walk(folder):  
         dirnames.sort()
         if root == folder:
@@ -64,25 +71,17 @@ def load_image(folder, dim=140, expand_train=False, mode="RGB", add_gray=False,
         for filename in filenames:
             if re.search("\.(jpg|png|jpeg)$", filename):
                 filepath = os.path.join(root, filename)
-                image = imread(filepath, mode=mode)
-                gray_img = None
-                if mode == "L":
-                    image = img_resize(image, dim)
-                    image = np.array([image])
-                if mode == "RGB":
-                    image = img_resize(image, dim)
-
-                    if add_gray:
-                        gray_img = rgb2gray(image)
-                        gray_img = np.array([gray_img, gray_img, gray_img])
-
-                images.append(image)
+                images.append(filepath)
                 categories.append(c)
-                if add_gray:
-                    images.append(gray_img)
-                    categories.append(c) 
         c += 1
     
+    pool = multiprocessing.Pool()
+    labeled_images = zip(images, categories) 
+    results = [pool.apply_async(process_image, (li[0], li[1], dim, mode))
+                        for li in labeled_images]
+    labeled_images = [r.get() for r in results]
+
+    images, categories = zip(*labeled_images)
     images = np.asarray(images, dtype = np.float32)
     categories = np.array(categories, dtype = np.int32)
     
