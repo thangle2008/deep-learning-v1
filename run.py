@@ -36,7 +36,8 @@ def main(args, optimize=False):
         train_size = args.train_size
 
     train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
-                                                    normalize=True, train_size=train_size)  
+                                                    normalize=args.normalize, zero_center=args.zero_center,
+                                                    train_size=train_size)  
                                                
     num_channels = train_data[0][0].shape[0]
     
@@ -48,7 +49,7 @@ def main(args, optimize=False):
 
     # build the model
     if model == 'alexnet':
-        model = alexnet.build_model_revised(data_size, CLASSES)
+        model = alexnet.build_model_revised(data_size, CLASSES, cudnn=args.dnn)
     elif model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
     elif model == 'googlenet':
@@ -80,7 +81,10 @@ if __name__ == '__main__':
     parser.add_argument('--data', dest='data')
     parser.add_argument('--dim', dest='dim', action="store", type=int)
     parser.add_argument('--train_size', dest='train_size', action="store", type=float)
- 
+    parser.add_argument('--zero_center', dest='zero_center', action="store_true")
+    parser.add_argument('--normalize', dest='normalize', action="store_true")
+    parser.add_argument('--dnn', dest='dnn', action="store_true")
+
     args = parser.parse_args()
 
     main(args)
