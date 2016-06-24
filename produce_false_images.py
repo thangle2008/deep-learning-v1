@@ -26,7 +26,7 @@ def main(args):
     data_size = (None, data[0].shape[0], CROP_DIM, CROP_DIM)
     model = None
     if args.model == 'alexnet':
-        model = alexnet.build_model_revised(data_size, 9)
+        model = alexnet.build_model_revised(data_size, 9, cudnn=args.dnn)
     elif args.model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, 9)
     elif args.model == 'googlenet':

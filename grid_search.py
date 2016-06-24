@@ -1,10 +1,14 @@
-from train_conv import load_data, Network
+from train_conv import Network
+from tools.image_processing import load_image
 from configs import alexnet, dinc_sx3_ffc_b32
 
 import hyperopt
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 import cPickle
+import argparse
+from importlib import import_module
+import numpy as np
 
 CLASSES = 9
 DIM = 140
@@ -18,33 +22,74 @@ ETA = 0.1
 LMBDA = 0.0001
 EPOCHS = 50
 
-def build_network():
-    data_size = (None, CHANNELS, CROP_DIM, CROP_DIM)
+def build_network(model_name, data_size, cudnn=False):
+    model = None
 
-#    model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
-    model = alexnet.build_model_revised(data_size, CLASSES)
+    if model_name == 'alexnet':
+        model = alexnet.build_model_revised(data_size, CLASSES, cudnn=cudnn)
+    elif model_name == 'dinc':
+        model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
+    elif model_name == 'googlenet':
+        googlenet = import_module('configs.googlenet')
+        model = googlenet.build_model(data_size, CLASSES)
 
     return Network(model['input'], model['output'])
     
 
-def main():
-    train_data, val_data, test_data = load_data(IMG_DIR)
-    
-    def objective(lr):
-        net = build_network()
-        lmbda = LMBDA
-        num_epoch = EPOCHS
+def main(args):
+    algorithm = 'adagrad'
+    num_epoch = EPOCHS
+    model = 'alexnet'
+    train_size = 0.6
 
-        best_val_cost, _, _ = net.train('adam', train_data, val_data=val_data, test_data=test_data,
+    if args.algorithm:
+        algorithm = args.algorithm
+    if args.model:
+        model = args.model 
+    if args.epoch:
+        num_epoch = args.epoch
+    if args.train_size:
+        train_size = args.train_size
+
+    train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
+                                                    normalize=True, zero_center=args.zero_center,
+                                                    train_size=train_size)  
+    
+    # use both val and test as val
+    val_data = (np.concatenate((val_data[0], test_data[0]), axis = 0),
+                np.concatenate((val_data[1], test_data[1])))
+
+    num_channels = train_data[0][0].shape[0]
+    
+    data_size = (None, num_channels, CROP_DIM, CROP_DIM)
+
+    def objective(hyperargs):
+        net = build_network(model, data_size, cudnn=args.dnn)
+        lr = args.learning_rate
+        lmbda = args.lmbda
+
+        if 'lr' in hyperargs:
+            lr = hyperargs['lr']
+        if 'lmbda' in hyperargs:
+            lmbda = hyperargs['lmbda']
+        
+        best_val_cost, train_costs, val_costs = net.train(algorithm, train_data, val_data=val_data, test_data=None,
                                         lr=lr, lmbda=lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
-                                        val_batch_size=10, epochs = num_epoch, train_cost_cached=False,
-                                        val_cost_cached=False, crop_dim=CROP_DIM)
+                                        val_batch_size=10, epochs = num_epoch, train_cost_cached=True,
+                                        val_cost_cached=True, crop_dim=CROP_DIM)
         return {'loss': best_val_cost, 'status': STATUS_OK}
 
-    space = hp.uniform('lr', 0, 0.001)
+    space = {}
+    if not args.learning_rate:
+        print "Optimizing learning rate"
+        space['lr'] = hp.uniform('lr', 0, 0.001)
+    if not args.lmbda:
+        print "Optimizing regularization rate"
+        space['lmbda'] = hp.uniform('lambda', 0, 0.1)
+
     trials = Trials()
 
-    best = fmin(objective, space, algo=tpe.suggest, max_evals=50, trials=trials)
+    best = fmin(objective, space, algo=tpe.suggest, max_evals=args.num_trials, trials=trials)
 
     print best
     print hyperopt.space_eval(space, best)
@@ -54,4 +99,20 @@ def main():
     f.close()
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-a', '--algorithm', dest='algorithm')
+    parser.add_argument('-e', '--epoch', dest='epoch', action="store", type=int)
+    parser.add_argument('-m', '--model', dest='model')
+    parser.add_argument('--learning_rate', dest='learning_rate', action="store", type=float)
+    parser.add_argument('--lambda', dest='lmbda', action="store", type=float)
+    parser.add_argument('--data', dest='data')
+    parser.add_argument('--dim', dest='dim', action="store", type=int)
+    parser.add_argument('--train_size', dest='train_size', action="store", type=float)
+    parser.add_argument('--zero_center', dest='zero_center', action="store_true")
+    parser.add_argument('--dnn', dest='dnn', action="store_true")
+    parser.add_argument('--num_trials', dest='num_trials', action="store", type=int)
+
+    args = parser.parse_args()
+    
+    main(args)

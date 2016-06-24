@@ -121,7 +121,7 @@ class Network:
         best_val_cost = float('inf')
         best_params = None
 
-        print("Training network with algorithm={0}, lr={1} in {2} epochs".format(algorithm, lr, epochs))
+        print("Training network with algorithm={0}, lr={1}, lmbda={2} in {3} epochs".format(algorithm, lr, lmbda, epochs))
 
         for epoch in xrange(epochs):
             epoch_costs = []
