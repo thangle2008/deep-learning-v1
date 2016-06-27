@@ -37,23 +37,9 @@ def build_network(model_name, data_size, cudnn=False):
     
 
 def main(args):
-    algorithm = 'adagrad'
-    num_epoch = EPOCHS
-    model = 'alexnet'
-    train_size = 0.6
-
-    if args.algorithm:
-        algorithm = args.algorithm
-    if args.model:
-        model = args.model 
-    if args.epoch:
-        num_epoch = args.epoch
-    if args.train_size:
-        train_size = args.train_size
-
     train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
-                                                    normalize=True, zero_center=args.zero_center,
-                                                    train_size=train_size)  
+                                                    zero_center=args.zero_center,
+                                                    train_size=args.train_size)  
     
     # use both val and test as val
     val_data = (np.concatenate((val_data[0], test_data[0]), axis = 0),
@@ -64,7 +50,7 @@ def main(args):
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
 
     def objective(hyperargs):
-        net = build_network(model, data_size, cudnn=args.dnn)
+        net = build_network(args.model, data_size, cudnn=args.dnn)
         lr = args.learning_rate
         lmbda = args.lmbda
 
@@ -75,8 +61,7 @@ def main(args):
         
         best_val_cost, train_costs, val_costs = net.train(algorithm, train_data, val_data=val_data, test_data=None,
                                         lr=lr, lmbda=lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
-                                        val_batch_size=10, epochs = num_epoch, train_cost_cached=True,
-                                        val_cost_cached=True, crop_dim=CROP_DIM)
+                                        val_batch_size=10, epochs = args.epoch, crop_dim=CROP_DIM)
         return {'loss': best_val_cost, 'status': STATUS_OK}
 
     space = {}
@@ -102,16 +87,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-a', '--algorithm', dest='algorithm')
-    parser.add_argument('-e', '--epoch', dest='epoch', action="store", type=int)
+    parser.add_argument('-e', '--epoch', dest='epoch', action="store", type=int, default=300)
     parser.add_argument('-m', '--model', dest='model')
     parser.add_argument('--learning_rate', dest='learning_rate', action="store", type=float)
     parser.add_argument('--lambda', dest='lmbda', action="store", type=float)
     parser.add_argument('--data', dest='data')
-    parser.add_argument('--dim', dest='dim', action="store", type=int)
+    parser.add_argument('--dim', dest='dim', action="store", type=int, default=160)
     parser.add_argument('--train_size', dest='train_size', action="store", type=float)
     parser.add_argument('--zero_center', dest='zero_center', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
-    parser.add_argument('--num_trials', dest='num_trials', action="store", type=int)
+    parser.add_argument('--num_trials', dest='num_trials', action="store", type=int, default=50)
 
     args = parser.parse_args()
     

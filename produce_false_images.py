@@ -14,8 +14,7 @@ import argparse
 CROP_DIM = 128
 
 def main(args):
-    data, _, _, label_dict = load_image(args.data, dim=args.dim, normalize=args.normalize,
-                                        zero_center=args.zero_center)
+    data, _, _, label_dict = load_image(args.data, dim=args.dim, zero_center=args.zero_center)
 
     print data[0].shape
 
@@ -59,9 +58,8 @@ if __name__ == "__main__":
     parser.add_argument('--classifier', dest='clf')
     parser.add_argument('-m', '--model', dest='model')
     parser.add_argument('--output_png', dest='output_png', action='store_true')
-    parser.add_argument('--dim', dest='dim', action='store', type=int)
+    parser.add_argument('--dim', dest='dim', action='store', type=int, default=160)
     parser.add_argument('--zero_center', dest='zero_center', action="store_true")
-    parser.add_argument('--normalize', dest='normalize', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     
     args = parser.parse_args()

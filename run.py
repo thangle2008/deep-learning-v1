@@ -16,28 +16,9 @@ TRAIN_BATCH_SIZE = 32
 EPOCHS = 300
 
 def main(args, optimize=False):
-    algorithm = 'adagrad'
-    num_epoch = EPOCHS
-    model = 'alexnet'
-    lr, lmbda = 0.009, 0.0001
-    train_size = 0.6
-
-    if args.algorithm:
-        algorithm = args.algorithm
-    if args.model:
-        model = args.model 
-    if args.learning_rate:
-        lr = args.learning_rate
-    if args.lmbda:
-        lmbda = args.lmbda
-    if args.epoch:
-        num_epoch = args.epoch
-    if args.train_size:
-        train_size = args.train_size
-
     train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
-                                                    normalize=args.normalize, zero_center=args.zero_center,
-                                                    train_size=train_size)  
+                                                    zero_center=args.zero_center,
+                                                    train_size=args.train_size)  
                                                
     num_channels = train_data[0][0].shape[0]
     
@@ -48,41 +29,41 @@ def main(args, optimize=False):
                 np.concatenate((val_data[1], test_data[1])))
 
     # build the model
-    if model == 'alexnet':
+    model = None
+    if args.model == 'alexnet':
         model = alexnet.build_model_revised(data_size, CLASSES, cudnn=args.dnn)
-    elif model == 'dinc':
+    elif args.model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
-    elif model == 'googlenet':
+    elif args.model == 'googlenet':
         googlenet = import_module('configs.googlenet')
         model = googlenet.build_model(data_size, CLASSES)
 
     net = Network(model['input'], model['output'])
 
-    best_val_cost, train_costs, val_costs = net.train(algorithm, train_data, val_data=val_data, test_data=test_data,
-                                        lr=lr, lmbda=lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
-                                        val_batch_size=10, epochs = num_epoch, train_cost_cached=True,
+    best_val_cost, train_costs, val_costs = net.train(args.algorithm, train_data, val_data=val_data, test_data=test_data,
+                                        lr=args.learning_rate, lmbda=args.lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
+                                        val_batch_size=10, epochs = args.epoch, train_cost_cached=True,
                                         val_cost_cached=True, crop_dim=CROP_DIM)
 
     it = range(num_epoch)
 
     plt.plot(it, train_costs, 'r', it, val_costs, 'b')
 
-    plt.savefig('./alex.png')
+    plt.savefig('./cost.png')
     plt.show()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-a', '--algorithm', dest='algorithm')
-    parser.add_argument('-e', '--epoch', dest='epoch', action="store", type=int)
+    parser.add_argument('-e', '--epoch', dest='epoch', action="store", type=int, default=300)
     parser.add_argument('-m', '--model', dest='model')
     parser.add_argument('--learning_rate', dest='learning_rate', action="store", type=float)
     parser.add_argument('--lambda', dest='lmbda', action="store", type=float)
     parser.add_argument('--data', dest='data')
-    parser.add_argument('--dim', dest='dim', action="store", type=int)
-    parser.add_argument('--train_size', dest='train_size', action="store", type=float)
+    parser.add_argument('--dim', dest='dim', action="store", type=int, default=160)
+    parser.add_argument('--train_size', dest='train_size', action="store", type=float, default=0.6)
     parser.add_argument('--zero_center', dest='zero_center', action="store_true")
-    parser.add_argument('--normalize', dest='normalize', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
 
     args = parser.parse_args()

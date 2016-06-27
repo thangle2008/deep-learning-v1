@@ -52,8 +52,7 @@ def process_image(imgfile, label, dim, mode):
     return img_resize(img, dim), label
 
 #### Main load and save functions
-def load_image(folder, dim=140, expand_train=False, mode="RGB", 
-                train_size=1.0, normalize=False, zero_center=False):
+def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False):
     print "Loading data"
     images = []
     categories = []
@@ -82,50 +81,55 @@ def load_image(folder, dim=140, expand_train=False, mode="RGB",
     labeled_images = [r.get() for r in results]
 
     images, categories = zip(*labeled_images)
-    images = np.asarray(images, dtype = np.float32)
+    images = np.asarray(images)
     categories = np.array(categories, dtype = np.int32)
     
-    if normalize:
-        images = images / 255.0
-
-    if zero_center:
-        images -= np.mean(images, axis = 0)
+    # normalize    
+    images = images / np.float32(255)
 
     # swap axes of the images
     images = images.swapaxes(1, 3).swapaxes(2, 3)
  
     if train_size == 1.0:
+        if zero_center:
+            mean_activity_train = np.mean(images, axis = 0)
+            images -= mean_activity_train
+            np.save('image-mean', mean_activity_train)
         return (images, categories), None, None, label_dict
- 
-    # stratified shuffle and split the data set
-    sss = StratifiedShuffleSplit(categories, 1, test_size=1-train_size,
-                        random_state=SEED1)
+    else: 
+        # stratified shuffle and split the data set
+        sss = StratifiedShuffleSplit(categories, 1, test_size=1-train_size,
+                            random_state=SEED1)
 
-    train_x, train_y, test_val_x, test_val_y = None, None, None, None
+        train_x, train_y, test_val_x, test_val_y = None, None, None, None
 
-    for train_index, test_index in sss:
-        train_x, test_val_x = images[train_index], images[test_index]
-        train_y, test_val_y = categories[train_index], categories[test_index]
+        for train_index, test_index in sss:
+            train_x, test_val_x = images[train_index], images[test_index]
+            train_y, test_val_y = categories[train_index], categories[test_index]
 
-    # continue to split between val and test sets
-    sss = StratifiedShuffleSplit(test_val_y, 1, test_size = 0.5, 
-                        random_state=SEED2)
-    
-    val_x, val_y, test_x, test_y = None, None, None, None
-    for val_index, test_index in sss:
-        val_x, test_x = test_val_x[val_index], test_val_x[test_index]
-        val_y, test_y = test_val_y[val_index], test_val_y[test_index]
+        # continue to split between val and test sets
+        sss = StratifiedShuffleSplit(test_val_y, 1, test_size = 0.5, 
+                            random_state=SEED2)
+        
+        val_x, val_y, test_x, test_y = None, None, None, None
+        for val_index, test_index in sss:
+            val_x, test_x = test_val_x[val_index], test_val_x[test_index]
+            val_y, test_y = test_val_y[val_index], test_val_y[test_index]
 
-    # expand the training data if desired
-    if expand_train:
-        train_x, train_y = expand_data_set(list(train_x), list(train_y))
+        if zero_center:
+            mean_activity_train = np.mean(train_x, axis = 0)
+            train_x -= mean_activity_train
+            val_x -= mean_activity_train
+            test_x -= mean_activity_train
+            np.save('image-mean', mean_activity_train)
 
-    print np.array(train_x).shape
-    train_data = (np.array(train_x), np.array(train_y))
-    val_data = (val_x, val_y)
-    test_data = (test_x, test_y)
+        print train_x.shape
 
-    return train_data, val_data, test_data, label_dict
+        train_data = (train_x, train_y)
+        val_data = (val_x, val_y)
+        test_data = (test_x, test_y)
+
+        return train_data, val_data, test_data, label_dict
 
 def save_image(data, filename="data_set.pkl.gz"):
     print "Saving data"
