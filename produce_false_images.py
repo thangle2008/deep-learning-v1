@@ -14,15 +14,15 @@ import argparse
 CROP_DIM = 128
 
 def main(args):
-    data, _, _, label_dict = load_image(args.data, dim=args.dim, zero_center=args.zero_center)
+    data, _, _, label_dict = load_image(args.data, dim=args.dim)
 
     print data[0].shape
 
     params = np.load(args.clf)
 
-    num_channels = data[0].shape[0]
+    num_channels = data[0][0].shape[0]
         
-    data_size = (None, data[0].shape[0], CROP_DIM, CROP_DIM)
+    data_size = (None, num_channels, CROP_DIM, CROP_DIM)
     model = None
     if args.model == 'alexnet':
         model = alexnet.build_model_revised(data_size, 9, cudnn=args.dnn)
@@ -59,7 +59,6 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--model', dest='model')
     parser.add_argument('--output_png', dest='output_png', action='store_true')
     parser.add_argument('--dim', dest='dim', action='store', type=int, default=160)
-    parser.add_argument('--zero_center', dest='zero_center', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     
     args = parser.parse_args()

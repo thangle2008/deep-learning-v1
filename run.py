@@ -45,7 +45,7 @@ def main(args, optimize=False):
                                         val_batch_size=10, epochs = args.epoch, train_cost_cached=True,
                                         val_cost_cached=True, crop_dim=CROP_DIM)
 
-    it = range(num_epoch)
+    it = range(args.epoch)
 
     plt.plot(it, train_costs, 'r', it, val_costs, 'b')
 
