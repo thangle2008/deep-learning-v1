@@ -19,7 +19,8 @@ def main(args, optimize=False):
     train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
                                                     zero_center=args.zero_center,
                                                     train_size=args.train_size,
-                                                    crop=args.crop)
+                                                    crop=args.crop,
+                                                    color_jitter=args.color_jitter)
                                                
     num_channels = train_data[0][0].shape[0]
     
@@ -69,6 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--zero_center', dest='zero_center', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     parser.add_argument('--crop', dest='crop', action="store_true")
+    parser.add_argument('--color_jitter', dest='color_jitter', action="store_true")
 
     args = parser.parse_args()
 

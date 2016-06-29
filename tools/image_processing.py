@@ -9,13 +9,19 @@ import random
 import cPickle
 import gzip
 
-from scipy.misc import imread, imresize, imrotate
+from scipy.misc import imread, imresize, imrotate, toimage, fromimage
 from scipy.ndimage.interpolation import zoom, shift
+
+import PIL
+from PIL.ImageEnhance import Brightness, Contrast, Color 
 
 import multiprocessing
 
+LOAD_SEED = 41
 SEED1 = 42
 SEED2 = 43
+
+random.seed(LOAD_SEED)
 
 #### Processing functions
 def center_crop(img, dim, axis):
@@ -47,15 +53,48 @@ def img_resize(img, dim):
         img = imresize(img, (dim, (dim2 / scaling_factor)))
         return center_crop(img, dim, axis=1)
 
-def process_image(imgfile, label, dim, mode, crop=False):
+def process_image(imgfile, label, dim, mode, crop=False, color_jitter=False):
     img = imread(imgfile, mode=mode)
+    if color_jitter:
+        img = color_jitter_func(img)
     if crop:
         return img_resize(img, dim), label
     else:
         return imresize(img, (dim, dim)), label
 
+#### Color jittering functions
+def adjust(img, alpha, etype):
+    if alpha == 0.0:
+        return img
+
+    pil_img = toimage(img)
+
+    enhancer = None
+    if etype == "brightness":
+        enhancer = Brightness(pil_img)
+    elif etype == "color":
+        enhancer = Color(pil_img)
+    elif etype == "contrast":
+        enhancer = Contrast(pil_img)
+
+    return fromimage(enhancer.enhance(alpha))
+
+def color_jitter_func(img):
+    etypes = ['brightness', 'contrast', 'color']
+
+    # Random the order of enhancement 
+    random.shuffle(etypes)
+
+    # Adjust consecutively
+    new_img = np.array(img)
+    for e in etypes:
+        alpha = random.uniform(0.5, 1.5)
+        new_img = adjust(new_img, alpha, e)
+
+    return new_img
+    
 #### Main load and save functions
-def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, crop=False):
+def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, crop=False, color_jitter=False):
     print "Loading data"
     images = []
     categories = []
@@ -80,7 +119,7 @@ def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, c
     # loading and preprocessing images 
     pool = multiprocessing.Pool()
     labeled_images = zip(images, categories) 
-    results = [pool.apply_async(process_image, (li[0], li[1], dim, mode, crop))
+    results = [pool.apply_async(process_image, (li[0], li[1], dim, mode, crop, color_jitter))
                         for li in labeled_images]
     labeled_images = [r.get() for r in results]
 

@@ -14,7 +14,7 @@ import argparse
 CROP_DIM = 128
 
 def main(args):
-    data, _, _, label_dict = load_image(args.data, dim=args.dim, crop=args.crop)
+    data, _, _, label_dict = load_image(args.data, dim=args.dim, crop=args.crop, color_jitter=args.color_jitter)
 
     print data[0].shape
 
@@ -61,6 +61,7 @@ if __name__ == "__main__":
     parser.add_argument('--dim', dest='dim', action='store', type=int, default=160)
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     parser.add_argument('--crop', dest='crop', action="store_true")
+    parser.add_argument('--color_jitter', dest='color_jitter', action="store_true")
     
     args = parser.parse_args()
     main(args)      
