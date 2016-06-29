@@ -47,12 +47,15 @@ def img_resize(img, dim):
         img = imresize(img, (dim, (dim2 / scaling_factor)))
         return center_crop(img, dim, axis=1)
 
-def process_image(imgfile, label, dim, mode):
+def process_image(imgfile, label, dim, mode, crop=False):
     img = imread(imgfile, mode=mode)
-    return img_resize(img, dim), label
+    if crop:
+        return img_resize(img, dim), label
+    else:
+        return imresize(img, (dim, dim)), label
 
 #### Main load and save functions
-def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False):
+def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, crop=False):
     print "Loading data"
     images = []
     categories = []
@@ -73,10 +76,11 @@ def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False):
                 images.append(filepath)
                 categories.append(c)
         c += 1
-    
+   
+    # loading and preprocessing images 
     pool = multiprocessing.Pool()
     labeled_images = zip(images, categories) 
-    results = [pool.apply_async(process_image, (li[0], li[1], dim, mode))
+    results = [pool.apply_async(process_image, (li[0], li[1], dim, mode, crop))
                         for li in labeled_images]
     labeled_images = [r.get() for r in results]
 
@@ -87,7 +91,7 @@ def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False):
     # normalize    
     images = images / np.float32(255)
 
-    # swap axes of the images
+    # swap axes of the images to format (c, w, h)
     images = images.swapaxes(1, 3).swapaxes(2, 3)
  
     if train_size == 1.0:

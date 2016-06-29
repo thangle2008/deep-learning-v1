@@ -39,7 +39,8 @@ def build_network(model_name, data_size, cudnn=False):
 def main(args):
     train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
                                                     zero_center=args.zero_center,
-                                                    train_size=args.train_size)  
+                                                    train_size=args.train_size,
+                                                    crop=args.crop)  
     
     # use both val and test as val
     val_data = (np.concatenate((val_data[0], test_data[0]), axis = 0),
@@ -97,6 +98,7 @@ if __name__ == '__main__':
     parser.add_argument('--zero_center', dest='zero_center', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     parser.add_argument('--num_trials', dest='num_trials', action="store", type=int, default=50)
+    parser.add_argument('--crop', dest='crop', action="store_true")
 
     args = parser.parse_args()
     

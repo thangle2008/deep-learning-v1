@@ -18,7 +18,8 @@ EPOCHS = 300
 def main(args, optimize=False):
     train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
                                                     zero_center=args.zero_center,
-                                                    train_size=args.train_size)  
+                                                    train_size=args.train_size,
+                                                    crop=args.crop)
                                                
     num_channels = train_data[0][0].shape[0]
     
@@ -31,12 +32,14 @@ def main(args, optimize=False):
     # build the model
     model = None
     if args.model == 'alexnet':
-        model = alexnet.build_model_revised(data_size, CLASSES, cudnn=args.dnn)
+        model = alexnet.build_model_revised(data_size, CLASSES, cudnn=args.dnn, batch_norm=True)
     elif args.model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
     elif args.model == 'googlenet':
         googlenet = import_module('configs.googlenet')
         model = googlenet.build_model(data_size, CLASSES)
+
+    print "Using model {0}".format(args.model)
 
     net = Network(model['input'], model['output'])
 
@@ -65,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--train_size', dest='train_size', action="store", type=float, default=0.6)
     parser.add_argument('--zero_center', dest='zero_center', action="store_true")
     parser.add_argument('--dnn', dest='dnn', action="store_true")
+    parser.add_argument('--crop', dest='crop', action="store_true")
 
     args = parser.parse_args()
 
