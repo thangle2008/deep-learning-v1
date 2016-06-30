@@ -14,7 +14,12 @@ import argparse
 CROP_DIM = 128
 
 def main(args):
-    data, _, _, label_dict = load_image(args.data, dim=args.dim, crop=args.crop, color_jitter=args.color_jitter)
+    data, _, _, label_dict, _ = load_image(args.data, dim=args.dim, crop=args.crop, color_jitter=args.color_jitter)
+
+    img_mean = None
+    if args.img_mean:
+        img_mean = np.load(args.img_mean)
+        data = (data[0]-img_mean, data[1])
 
     print data[0].shape
 
@@ -45,7 +50,9 @@ def main(args):
         text2 = plt.text(10, 20, "Correct label", color='r', weight='bold')
 
         for i in xrange(len(imgs)):
-            img = imgs[i].swapaxes(1, 2).swapaxes(0, 2)
+            if img_mean is not None:
+                img = imgs[i] + img_mean
+            img = img.swapaxes(1, 2).swapaxes(0, 2)
             text1.set_text("Classified as {0}".format(label_dict[wrong_labels[i]]))
             text2.set_text("Should be {0}".format(label_dict[correct_labels[i]]))
             plt.imshow(img)
@@ -62,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     parser.add_argument('--crop', dest='crop', action="store_true")
     parser.add_argument('--color_jitter', dest='color_jitter', action="store_true")
+    parser.add_argument('--img_mean', dest='img_mean')
     
     args = parser.parse_args()
     main(args)      

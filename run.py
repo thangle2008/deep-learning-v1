@@ -9,6 +9,8 @@ import argparse
 import cPickle
 import gzip
 
+from importlib import import_module
+
 CLASSES = 9
 DIM = 140
 CROP_DIM = 128
@@ -16,11 +18,10 @@ TRAIN_BATCH_SIZE = 32
 EPOCHS = 300
 
 def main(args, optimize=False):
-    train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
+    train_data, val_data, test_data, label_dict, img_mean = load_image(args.data, dim=args.dim, mode="RGB",
                                                     zero_center=args.zero_center,
                                                     train_size=args.train_size,
-                                                    crop=args.crop,
-                                                    color_jitter=args.color_jitter)
+                                                    crop=args.crop)
                                                
     num_channels = train_data[0][0].shape[0]
     
@@ -47,7 +48,8 @@ def main(args, optimize=False):
     best_val_cost, train_costs, val_costs = net.train(args.algorithm, train_data, val_data=val_data, test_data=test_data,
                                         lr=args.learning_rate, lmbda=args.lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
                                         val_batch_size=10, epochs = args.epoch, train_cost_cached=True,
-                                        val_cost_cached=True, crop_dim=CROP_DIM)
+                                        val_cost_cached=True, crop_dim=CROP_DIM, color_jitter=args.color_jitter,
+                                        img_mean=img_mean)
 
     it = range(args.epoch)
 

@@ -10,45 +10,50 @@ import gzip
 import cPickle
 import random
 
+from tools.image_processing import color_jitter_func
+
 CROP_SEED = 28
 SHUFFLE_SEED = 29
 
-def load_data(filepath):
-    print "loading data"
-    f = gzip.open(filepath, 'r')
-    train_data, val_data, test_data, label_dict = cPickle.load(f)
-   
-    def cast_to_32(data):
-	data_x = np.asarray(data[0], dtype=np.float32)
-	data_y = np.asarray(data[1], dtype=np.int32)
-	return (data_x, data_y)
-
-    f.close()
-    
-    return (cast_to_32(train_data), cast_to_32(val_data), cast_to_32(test_data), label_dict)
-
-def random_crop(data, dim, new_dim):
-    new_data = []
-
+# Augmentation helper
+def random_crop(img, new_dim):
+    dim = img.shape[1]
     offset = dim - new_dim
-    for img in data:
-        idx = random.randint(0, offset)
-        idy = random.randint(0, offset)
+    
+    idx = random.randint(0, offset)
+    idy = random.randint(0, offset)
 
-        new_img = img[:, idx:idx+new_dim, idy:idy+new_dim]
+    new_img = img[:, idx:idx+new_dim, idy:idy+new_dim]
 
-        if random.randint(0, 1) == 0:
-            new_img = new_img[:, :, ::-1]
+    if random.randint(0, 1) == 0:
+        new_img = new_img[:, :, ::-1]
 
-        new_data.append(new_img)
+    return new_img
 
-    return np.asarray(new_data)
-
-def center_crop(data, dim, new_dim):
+def center_crop(data, new_dim):
+    dim = data.shape[2]
     offset = (dim - new_dim) / 2
     return data[:, :, offset:offset+new_dim, offset:offset+new_dim]
     
- 
+def augment(data, crop_dim, img_mean=None, color_jitter=False):
+    new_data = []
+    for img in data:
+        new_img = np.array(img)
+        if color_jitter:
+            if img_mean is not None:
+                new_img += img_mean
+            new_img = new_img.transpose(1, 2, 0)
+            new_img = color_jitter_func(new_img)
+            new_img = new_img.transpose(2, 0, 1)
+            new_img = new_img / np.float32(255)
+            if img_mean is not None:
+                new_img -= img_mean
+        new_img = random_crop(new_img, crop_dim)
+    
+        new_data.append(new_img)
+    return np.array(new_data)
+
+# Main network class
 class Network:
     def __init__(self, l_in, l_out):
         self.l_in = l_in
@@ -70,7 +75,7 @@ class Network:
     def train(self, algorithm, train_data, val_data=None, test_data=None, lr=0.1, lmbda=0.0,
               train_batch_size=None, val_batch_size=None, epochs=1,
               train_cost_cached=False, val_cost_cached=False,
-              crop_dim=None):
+              crop_dim=128, color_jitter=False, img_mean=None):
         # extract data and labels
         train_x, train_y = train_data
         val_x, val_y = val_data
@@ -130,10 +135,10 @@ class Network:
                 iteration = num_train_batches * epoch + batch
                 batch_x = train_x[batch*train_batch_size:(batch+1)*train_batch_size]
                 batch_y = train_y[batch*train_batch_size:(batch+1)*train_batch_size]
-                
-                if crop_dim:
-                    dim = batch_x.shape[2]
-                    batch_x = random_crop(batch_x, dim, crop_dim)
+               
+                # training data augmenting
+                batch_x = augment(batch_x, crop_dim, img_mean=img_mean, color_jitter=color_jitter) 
+
                 _, train_cost = train_fn(batch_x, batch_y)
                 epoch_costs.append(train_cost)
 
@@ -168,7 +173,7 @@ class Network:
  
         return best_val_cost, train_costs, val_costs
          
-    def cost_and_accuracy(self, test_data, mini_batch_size=None, crop_dim=None):
+    def cost_and_accuracy(self, test_data, mini_batch_size=None, crop_dim=128):
         test_x, test_y = test_data
         
         if not mini_batch_size:
@@ -182,8 +187,7 @@ class Network:
             batch_y = test_y[i*mini_batch_size:(i+1)*mini_batch_size]
             
             if crop_dim:
-                dim = batch_x.shape[2]
-                batch_x = center_crop(batch_x, dim, crop_dim)
+                batch_x = center_crop(batch_x, crop_dim)
 
             test_accs.append(self.__test_fn(batch_x, batch_y))
     
@@ -207,8 +211,7 @@ class Network:
             non_cropped = batch_x
  
             if crop_dim:
-                dim = batch_x.shape[2]
-                batch_x = center_crop(batch_x, dim, crop_dim)
+                batch_x = center_crop(batch_x, crop_dim)
             
             predictions = np.argmax(self.__get_preds(batch_x), axis=1)
             diff_idx = np.where(predictions != batch_y)[0]

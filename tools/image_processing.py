@@ -134,11 +134,12 @@ def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, c
     images = images.swapaxes(1, 3).swapaxes(2, 3)
  
     if train_size == 1.0:
+        mean_activity_train = None
         if zero_center:
             mean_activity_train = np.mean(images, axis = 0)
             images -= mean_activity_train
             np.save('image-mean', mean_activity_train)
-        return (images, categories), None, None, label_dict
+        return (images, categories), None, None, label_dict, mean_activity_train
     else: 
         # stratified shuffle and split the data set
         sss = StratifiedShuffleSplit(categories, 1, test_size=1-train_size,
@@ -159,6 +160,7 @@ def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, c
             val_x, test_x = test_val_x[val_index], test_val_x[test_index]
             val_y, test_y = test_val_y[val_index], test_val_y[test_index]
 
+        mean_activity_train = None
         if zero_center:
             mean_activity_train = np.mean(train_x, axis = 0)
             train_x -= mean_activity_train
@@ -172,7 +174,7 @@ def load_image(folder, dim=140, mode="RGB", train_size=1.0, zero_center=False, c
         val_data = (val_x, val_y)
         test_data = (test_x, test_y)
 
-        return train_data, val_data, test_data, label_dict
+        return train_data, val_data, test_data, label_dict, mean_activity_train
 
 def save_image(data, filename="data_set.pkl.gz"):
     print "Saving data"
