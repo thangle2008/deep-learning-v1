@@ -22,7 +22,6 @@ def main(args, optimize=False):
                                                     zero_center=args.zero_center,
                                                     train_size=args.train_size,
                                                     crop=args.crop)
-                                               
     num_channels = train_data[0][0].shape[0]
     
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
@@ -34,7 +33,7 @@ def main(args, optimize=False):
     # build the model
     model = None
     if args.model == 'alexnet':
-        model = alexnet.build_model_revised(data_size, CLASSES, cudnn=args.dnn, batch_norm=True)
+        model = alexnet.build_model(data_size, CLASSES, cudnn=args.dnn, batch_norm=True)
     elif args.model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
     elif args.model == 'googlenet':

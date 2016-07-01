@@ -30,7 +30,7 @@ def main(args):
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
     model = None
     if args.model == 'alexnet':
-        model = alexnet.build_model_revised(data_size, 9, cudnn=args.dnn)
+        model = alexnet.build_model(data_size, 9, cudnn=args.dnn, batch_norm=True)
     elif args.model == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, 9)
     elif args.model == 'googlenet':

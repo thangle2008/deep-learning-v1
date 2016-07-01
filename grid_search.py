@@ -26,7 +26,7 @@ def build_network(model_name, data_size, cudnn=False):
     model = None
 
     if model_name == 'alexnet':
-        model = alexnet.build_model_revised(data_size, CLASSES, cudnn=cudnn)
+        model = alexnet.build_model(data_size, CLASSES, cudnn=cudnn, batch_norm=True)
     elif model_name == 'dinc':
         model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
     elif model_name == 'googlenet':
@@ -37,7 +37,7 @@ def build_network(model_name, data_size, cudnn=False):
     
 
 def main(args):
-    train_data, val_data, test_data, label_dict = load_image(args.data, dim=args.dim, mode="RGB",
+    train_data, val_data, test_data, label_dict, img_mean = load_image(args.data, dim=args.dim, mode="RGB",
                                                     zero_center=args.zero_center,
                                                     train_size=args.train_size,
                                                     crop=args.crop)  
@@ -62,7 +62,8 @@ def main(args):
         
         best_val_cost, train_costs, val_costs = net.train(algorithm, train_data, val_data=val_data, test_data=None,
                                         lr=lr, lmbda=lmbda, train_batch_size=TRAIN_BATCH_SIZE, 
-                                        val_batch_size=10, epochs = args.epoch, crop_dim=CROP_DIM)
+                                        val_batch_size=10, epochs = args.epoch, crop_dim=CROP_DIM,
+                                        img_mean=img_mean, color_jitter=args.color_jitter)
         return {'loss': best_val_cost, 'status': STATUS_OK}
 
     space = {}
@@ -99,6 +100,7 @@ if __name__ == '__main__':
     parser.add_argument('--dnn', dest='dnn', action="store_true")
     parser.add_argument('--num_trials', dest='num_trials', action="store", type=int, default=50)
     parser.add_argument('--crop', dest='crop', action="store_true")
+    parser.add_argument('--color_jitter', dest='color_jitter', action="store_true")
 
     args = parser.parse_args()
     
