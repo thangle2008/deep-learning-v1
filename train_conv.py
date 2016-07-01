@@ -35,6 +35,22 @@ def center_crop(data, new_dim):
     offset = (dim - new_dim) / 2
     return data[:, :, offset:offset+new_dim, offset:offset+new_dim]
     
+def get_corner_crops(data, new_dim, horizontal_flip=False):
+    res = []
+    dim = data.shape[2]
+    res.append(data[:, :, 0:new_dim, 0:new_dim])
+    res.append(data[:, :, dim-new_dim:, 0:new_dim])
+    res.append(data[:, :, 0:new_dim, dim-new_dim:])
+    res.append(data[:, :, dim-new_dim:, dim-new_dim:])
+
+    if horizontal_flip:
+        new_data = []
+        for d in res:
+            new_data.append(d[:, :, :, ::-1])
+        res = res + new_data
+    
+    return res
+    
 def augment(data, crop_dim, img_mean=None, color_jitter=False):
     new_data = []
     for img in data:
@@ -61,15 +77,22 @@ class Network:
 
         # defining testing function
         target_var = T.ivector()
+
         test_prediction = lasagne.layers.get_output(self.l_out, deterministic=True)
         test_cost = lasagne.objectives.categorical_crossentropy(test_prediction, target_var)
-
         test_cost = test_cost.mean()
         test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var), dtype=theano.config.floatX)
 
         self.__test_fn = theano.function([self.l_in.input_var, target_var], [test_cost, test_acc])
         self.__get_preds = theano.function([self.l_in.input_var], test_prediction)
 
+        # get cost and acc from predictions
+        pred_tensor = T.fmatrix()
+        test_cost_pred = lasagne.objectives.categorical_crossentropy(pred_tensor, target_var)
+        test_cost_pred = test_cost_pred.mean()
+        test_acc_pred = T.mean(T.eq(T.argmax(pred_tensor, axis=1), target_var), dtype=theano.config.floatX)
+        
+        self.__pred_test_fn = theano.function([pred_tensor, target_var], [test_cost_pred, test_acc_pred])
         random.seed(CROP_SEED)
     
     def train(self, algorithm, train_data, val_data=None, test_data=None, lr=0.1, lmbda=0.0,
@@ -153,7 +176,7 @@ class Network:
                             print("This is the best validation accuracy")
                             if test_data:
                                 _, test_acc = self.cost_and_accuracy(test_data,
-                                    mini_batch_size=val_batch_size, crop_dim=crop_dim)
+                                    mini_batch_size=val_batch_size, crop_dim=crop_dim, augment_test=False)
                                 print("The corresponding test accuracy: {0}%".format(test_acc * 100))
 
                         best_val_cost = min(best_val_cost, val_cost)
@@ -172,8 +195,22 @@ class Network:
         np.save("best_params", best_params)
  
         return best_val_cost, train_costs, val_costs
-         
-    def cost_and_accuracy(self, test_data, mini_batch_size=None, crop_dim=128):
+        
+    def get_batch_predictions(self, test_x, crop_dim=128, augment_test=False):
+        cropped = center_crop(test_x, crop_dim)
+        
+        if augment_test:
+            additional_tests = get_corner_crops(test_x, crop_dim, horizontal_flip=True)
+            additional_tests.append(cropped)
+            
+            predictions = []
+            for tx in additional_tests:
+                predictions.append(self.__get_preds(tx))
+            return np.mean(predictions, axis = 0)
+        else:
+            return self.__get_preds(cropped)
+
+    def cost_and_accuracy(self, test_data, mini_batch_size=10, crop_dim=128, augment_test=False):
         test_x, test_y = test_data
         
         if not mini_batch_size:
@@ -185,15 +222,13 @@ class Network:
         for i in xrange(num_test_batches):
             batch_x = test_x[i*mini_batch_size:(i+1)*mini_batch_size]
             batch_y = test_y[i*mini_batch_size:(i+1)*mini_batch_size]
-            
-            if crop_dim:
-                batch_x = center_crop(batch_x, crop_dim)
-
-            test_accs.append(self.__test_fn(batch_x, batch_y))
+           
+            predictions = self.get_batch_predictions(batch_x, crop_dim, augment_test)
+            test_accs.append(self.__pred_test_fn(predictions, batch_y))
     
         return np.mean(test_accs, axis=0)
 
-    def get_wrong_classification(self, test_data, mini_batch_size=None, crop_dim=None):
+    def get_wrong_classification(self, test_data, mini_batch_size=10, crop_dim=None, augment_test=False):
         test_x, test_y = test_data
 
         if not mini_batch_size:
@@ -213,7 +248,7 @@ class Network:
             if crop_dim:
                 batch_x = center_crop(batch_x, crop_dim)
             
-            predictions = np.argmax(self.__get_preds(batch_x), axis=1)
+            predictions = np.argmax(self.get_batch_predictions(batch_x, crop_dim, augment_test), axis=1)
             diff_idx = np.where(predictions != batch_y)[0]
  
             if res is not None:

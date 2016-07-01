@@ -40,10 +40,11 @@ def main(args):
     lasagne.layers.set_all_param_values(model['output'], params)
     net = Network(model['input'], model['output'])
    
-    print net.cost_and_accuracy(data, 10, CROP_DIM) 
+    print net.cost_and_accuracy(data, 10, CROP_DIM, augment_test=args.augment_test) 
 
     if args.output_png:
-        imgs, wrong_labels, correct_labels = net.get_wrong_classification(data, 10, CROP_DIM)
+        imgs, wrong_labels, correct_labels = net.get_wrong_classification(data, 10, CROP_DIM,
+                                                augment_test=args.augment_test)
          
         # output the wrong labels
         text1 = plt.text(10, 10, "Wrong label", color='r', weight='bold')
@@ -70,6 +71,7 @@ if __name__ == "__main__":
     parser.add_argument('--crop', dest='crop', action="store_true")
     parser.add_argument('--color_jitter', dest='color_jitter', action="store_true")
     parser.add_argument('--img_mean', dest='img_mean')
+    parser.add_argument('--augment_test', dest='augment_test', action="store_true")
     
     args = parser.parse_args()
     main(args)      
