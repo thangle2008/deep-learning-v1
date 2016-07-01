@@ -2,20 +2,21 @@ Using convolutional network to classify images
 
 Usage:
 
-1) First, you should go to the image_processing directory and execute the script run.py to convert the image folder into the desired format:
+1) To train the network, run the file run.py with these options (you should specify all of them):
 
-python run.py --img_dir [path to img folder] --dim [resized dimension, default is 140]
-
-You will see a compressed file popping up.
-
-2) Go back to the parent directory and run the script run.py. The options you have to specify are:
-
-|Option     | Argument |
-|-------    |----------|
-|-a         |algorithm to use (adam, momentum, ...)|
-|-e         |number of epochs (300, ..)|
-|-m         |model to use (alexnet or dinc)|
+|Option         | Argument |
+|-------        |----------|
+|-a             |algorithm to use (adam, momentum, ...)|
+|-e             |number of epochs, default is 300|
+|-m             |model to use|
 |--learning_rate| desired learning rate |
 |--lambda       | regularization rate|
-|--data         | path to compressed data (ex: sth/data.pkl.gz)|
+|--data         | path to data folder|
+|--dim          | resized dimension, default is 160|
+|--train_size   | use this portion of data for training, default is 0.6|
+|--zero_center  | whether to subtract the mean of training data |
+|--dnn          | whether to run the model with cuDNN |
+|--crop         | whether to use Alexnet's cropping style at preprocessing step |
+|--color_jitter | whether to change each training image's brightness, contrast and saturation |
 
+2) After the training finishes, there will be 2 important files popping up in the same directory: the image-mean.npy and best-params.npy, which store the mean of the training images (if zero_center flag is set to True) and the best learned weights. You can use these files with the script produce_false_images.py to test on other data set.
