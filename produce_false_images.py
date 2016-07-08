@@ -35,7 +35,10 @@ def main(args):
         model = dinc_sx3_ffc_b32.build_model(data_size, 9)
     elif args.model == 'googlenet':
         googlenet = import_module('configs.googlenet')
-        model = googlenet.build_model(data_size, 9)
+        model = googlenet.build_model(data_size, 9, batch_norm=True)
+    elif args.model == 'resnet':
+        resnet = import_module('configs.resnet50')
+        model = resnet.build_model(data_size, 9)
 
     lasagne.layers.set_all_param_values(model['output'], params)
     net = Network(model['input'], model['output'])

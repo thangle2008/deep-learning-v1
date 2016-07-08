@@ -35,10 +35,13 @@ def main(args, optimize=False):
     if args.model == 'alexnet':
         model = alexnet.build_model(data_size, CLASSES, cudnn=args.dnn, batch_norm=True)
     elif args.model == 'dinc':
-        model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES)
+        model = dinc_sx3_ffc_b32.build_model(data_size, CLASSES, batch_norm=True)
     elif args.model == 'googlenet':
         googlenet = import_module('configs.googlenet')
-        model = googlenet.build_model(data_size, CLASSES)
+        model = googlenet.build_model(data_size, CLASSES, batch_norm=True)
+    elif args.model == 'resnet':
+        resnet = import_module('configs.resnet50')
+        model = resnet.build_model(data_size, CLASSES)
 
     print "Using model {0}".format(args.model)
 
