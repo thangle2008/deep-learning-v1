@@ -25,6 +25,9 @@ random.seed(LOAD_SEED)
 
 #### Processing functions
 def center_crop(img, dim, axis):
+    """
+    Center crop an image along an axis.
+    """
     offset = (img.shape[axis] - dim) / 2
     if axis == 0:
         return img[offset:offset+dim]
@@ -32,6 +35,9 @@ def center_crop(img, dim, axis):
         return img[:, offset:offset+dim]
 
 def img_resize(img, dim):
+    """
+    Do Alexnet's cropping style.
+    """
     dim1 = img.shape[0]
     dim2 = img.shape[1]
     
@@ -80,6 +86,9 @@ def adjust(img, alpha, etype):
     return fromimage(enhancer.enhance(alpha))
 
 def color_jitter_func(img):
+    """
+    Randomly adjust brightness, contrast and color of the image.
+    """
     etypes = ['brightness', 'contrast', 'color']
 
     # Random the order of enhancement 
@@ -182,36 +191,3 @@ def save_image(data, filename="data_set.pkl.gz"):
     cPickle.dump(data, f)
     f.close() 
 
-def expand_data_set(imgs, labels):
-    print "expanding ..."
-    num_channels = len(imgs[0].shape)
-    def augment(a_imgs, a_labels, fn_list, param):
-        new_imgs = []
-        new_labels = []
-        for i in range(len(a_imgs)):
-            img = a_imgs[i]
-            if num_channels == 3:
-                img = a_imgs[i].swapaxes(1, 2).swapaxes(0, 2)
-            label = a_labels[i]
-            for f, p in zip(fn_list, param):
-                new_img = f(img, p) if p else f(img)
-                if num_channels == 3:
-                    new_img = new_img.swapaxes(0, 2).swapaxes(1, 2)
-                new_imgs.append(new_img)
-                new_labels.append(label)
-        return (a_imgs + new_imgs, a_labels + new_labels)
-   
-    # rotating 90, 180 and 270 degree
-    new_imgs, new_labels = augment(imgs, labels, [imrotate, imrotate, imrotate], [90, 180, 270])
-
-    # flip up-down, left-right
-    #new_imgs, new_labels = augment(new_imgs, new_labels, [np.flipud, np.fliplr], [None, None])
-    
-    # shift 1 pixel each direction
-    # if num_channels == 3:
-    #    new_imgs, new_labels = augment(new_imgs, new_labels, [shift, shift, shift, shift], 
-    #                               [(-1.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0), (0.0, 1.0, 0.0)])  
-    #else:
-    #    new_imgs, new_labels = augment(new_imgs, new_labels, [shift, shift, shift, shift], 
-    #                               [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0)])  
-    return np.array(new_imgs), np.array(new_labels)
