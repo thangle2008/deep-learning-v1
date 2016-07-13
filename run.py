@@ -25,6 +25,9 @@ def main(args, optimize=False):
     num_channels = train_data[0][0].shape[0]
     
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
+    CLASSES = len(label_dict)
+
+    print CLASSES
 
     # use both val and test as val
     val_data = (np.concatenate((val_data[0], test_data[0]), axis = 0),

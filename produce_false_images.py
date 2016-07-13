@@ -26,19 +26,20 @@ def main(args):
     params = np.load(args.clf)
 
     num_channels = data[0][0].shape[0]
-        
+    num_classes = len(label_dict)
+    
     data_size = (None, num_channels, CROP_DIM, CROP_DIM)
     model = None
     if args.model == 'alexnet':
-        model = alexnet.build_model(data_size, 9, cudnn=args.dnn, batch_norm=True)
+        model = alexnet.build_model(data_size, num_classes, cudnn=args.dnn, batch_norm=True)
     elif args.model == 'dinc':
-        model = dinc_sx3_ffc_b32.build_model(data_size, 9)
+        model = dinc_sx3_ffc_b32.build_model(data_size, num_classes, batch_norm=False)
     elif args.model == 'googlenet':
         googlenet = import_module('configs.googlenet')
-        model = googlenet.build_model(data_size, 9, batch_norm=True)
+        model = googlenet.build_model(data_size, num_classes, batch_norm=True)
     elif args.model == 'resnet':
         resnet = import_module('configs.resnet50')
-        model = resnet.build_model(data_size, 9)
+        model = resnet.build_model(data_size, num_classes)
 
     lasagne.layers.set_all_param_values(model['output'], params)
     net = Network(model['input'], model['output'])
