@@ -22,10 +22,13 @@ def build_deconv(name, conv, pool_layer=None):
             W=conv.W, flip_filters=not conv.flip_filters) 
     return net
      
-def build_separate_deconv(pool_layer, conv):
+def build_separate_deconv(pool_layer, conv, input_deconv=None):
     net = {}
-    data_size = lasagne.layers.get_output_shape(pool_layer)
-    net['input'] = lasagne.layers.InputLayer(shape=data_size)
+    if input_deconv is not None:
+        net['input'] = input_deconv
+    else:
+        data_size = lasagne.layers.get_output_shape(pool_layer)
+        net['input'] = lasagne.layers.InputLayer(shape=data_size)
     net['unpool'] = InverseLayer(net['input'], pool_layer)
     net['nonlin'] = NonlinearityLayer(net['unpool'])
     net['deconv'] = TransposedConv2DLayer(net['nonlin'], conv.input_shape[1],
@@ -33,7 +36,7 @@ def build_separate_deconv(pool_layer, conv):
             W=conv.W, flip_filters=not conv.flip_filters) 
     return net
 
-def build_model(data_size, num_classes, batch_norm=True, deconv=False):
+def build_model(data_size, num_classes, batch_norm=True):
     net = {}
     input_var = T.tensor4('input') 
 
@@ -55,8 +58,6 @@ def build_model(data_size, num_classes, batch_norm=True, deconv=False):
       pool_size=(2, 2),
       stride=2,
       )
-    if deconv:
-        net.update(build_deconv('deconv1', net['conv1'], net['pool1']))
 
     net['conv2'] = lasagne.layers.Conv2DLayer(
       net['pool1'],
